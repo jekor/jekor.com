@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta name="description" content="gressgraph - visualize your iptables firewall">
+  <meta name="keywords" content="gressgraph, iptables, firewall, graph, graphviz, haskell">
+  <title>gressgraph - visualize your iptables firewall</title>
+  <style type="text/css">
+    body {
+      background: url(gressgraph-header.png) top left no-repeat;
+      background-color: #808080;
+    }
+    #nav {
+      padding: 0.5em 0;
+      background-color: #808080;
+    }
+    #nav li {
+      display: inline;
+      margin-right: 1em;
+    }
+    #footer {
+      font-size: smaller;
+      text-align: center;
+      margin-top: 2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>gressgraph</h1>
+  <p style="margin-left: 2em"><i>Visualize your firewall.</i></p>
+
+  <ul id="nav">
+    <li><a href="gressgraph-0.2.tar.gz">Download</a> (source, 168KB)</li>
+    <li><a href="gressgraph.pdf">Documentation</a> (PDF, 9 pages)</li>
+    <li><a href="gressgraph-example.png">Screenshot</a> (PNG, 63KB)</li>
+  </ul>
+
+  <p style="clear: left">gressgraph produces a graph of your iptables ruleset using <a href="http://graphviz.org/">Graphviz</a>. You can use the graph to:
+    <ul>
+      <li>Look for vulnerabilities or redundancies.</li>
+      <li>Get a "feel" for a network.</li>
+      <li>Showcase your firewall.</li>
+    </ul>
+  </p>
+
+  <h2>About</h2>
+
+  <p>I've deliberately kept the program simple. It has no commandline options. To change the look of the output just modify the source (don't worry, it's currently only 205 lines of <a href="http://en.wikipedia.org/wiki/Literate_programming">literate</a> <a href="http://haskell.org/">Haskell</a>).</p>
+
+  <p>I've also only tested it on my own simple network. I'd appreciate hearing about how it works for you. Feel free to include your iptables output.</p>
+
+  <p>See the README file in the download for how to contact me, as well as instructions on how to build the program. See the COPYING file for license information (GPLv3).</p>
+
+  <h2>Latest Source</h2>
+
+  <p>You can checkout a copy of the latest code with:</p>
+
+  <p style="margin-left: 2em"><code><a href="http://www.darcs.net/">darcs</a> get http://jekor.com/gressgraph/</code></p>
+
+  <p id="footer">Copyright 2008 <a href="/">Chris Forno (jekor)</a></p>
+
+</body>
+</html>

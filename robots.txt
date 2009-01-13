@@ -1,0 +1,4 @@
+User-agent: *
+# No need to mislead searchers with old, probably bad, examples.
+Disallow: /Gt/doc/
+Disallow: /Gt/diagrams/
