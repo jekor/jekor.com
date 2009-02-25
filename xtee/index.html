@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta name="description" content="xtee - cross tee/expanded tee (fun with pipes). xtee is a short literate Haskell program for building complex Unix pipelines. It allows you to combine programs in more ways than just shell pipes and fifos allow.">
+  <meta name="keywords" content="xtee, tee, cross, expanded, netcat, haskell">
+  <title>xtee - fun with pipes</title>
+  <style type="text/css">
+    body {
+      background-color: white;
+    }
+    h1 {
+      background: url(xtee.png) top no-repeat;
+      height: 120px;
+    }
+    #nav {
+      padding: 0.5em 0;
+    }
+    #nav li {
+      display: inline;
+      margin-right: 1em;
+    }
+    #footer {
+      font-size: smaller;
+      text-align: center;
+      margin-top: 2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>xtee</h1>
+
+  <ul id="nav">
+    <li><a href="xtee-0.1.tar.gz">Download</a> (source, 217KB)</li>
+    <li><a href="xtee.pdf">Documentation</a> (PDF, 4 pages)</li>
+  </ul>
+
+  <p>xtee (<q>cross-tee</q>/<q>expanded tee</q>) is a program for building
+complex pipelines. It resembles the <code>tee</code> command, except that
+instead of copying stdin to stdout, it copies a file to stdout.</p>
+
+  <p>You can use <code>xtee</code> for building things like a bidirectional HTTP filter (using <a href="http://netcat.sourceforge.net/">netcat</a> and <a href="http://en.wikipedia.org/wiki/Sed">sed</a>). See the documentation for details on how to do this.</p>
+
+  <h2>About</h2>
+
+  <p>The program is 44 lines of <a href="http://en.wikipedia.org/wiki/Literate_programming">literate</a> <a href="http://haskell.org/">Haskell</a>. I've only tested it with the cases mentioned in the documentation.</p>
+
+  <p>See the README file in the download for how to contact me, as well as instructions on how to build the program. See the COPYING file for license information (GPLv3).</p>
+
+  <h2>Latest Source</h2>
+
+  <p>You can checkout a copy of the latest code with:</p>
+
+  <p style="margin-left: 2em"><code><a href="http://www.darcs.net/">darcs</a> get http://jekor.com/xtee/</code></p>
+
+  <p id="footer">Copyright 2008 <a href="/">Chris Forno (jekor)</a></p>
+
+</body>
+</html>
