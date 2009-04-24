@@ -11,7 +11,7 @@ exist in any libraries I know of.
 >  {- Control.Monad -}              liftM,
 >  {- Control.Monad.Trans -}        liftIO, MonadIO,
 >  {- Data.Char -}                  toLower,
->  {- Data.Maybe -}                 maybe, fromMaybe, fromJust, isJust, catMaybes,
+>  {- Data.Maybe -}                 maybe, fromMaybe, fromJust, isJust, isNothing, catMaybes,
 >  {- Data.Time.Calendar -}         Day,
 >  {- Data.Time.Clock -}            UTCTime,
 >  {- Data.Time.Format -}           formatTime,
@@ -26,7 +26,7 @@ We make extensive use of the |liftM| and the Maybe monad.
 > import Control.Monad (liftM)
 > import Control.Monad.Trans (liftIO, MonadIO)
 > import Data.Char (toLower)
-> import Data.Maybe (maybe, fromMaybe, fromJust, isJust, catMaybes)
+> import Data.Maybe (maybe, fromMaybe, fromJust, isJust, isNothing, catMaybes)
 > import Data.Time.Calendar (Day, toGregorian)
 > import Data.Time.Clock (getCurrentTime, UTCTime)
 > import Data.Time.Format (formatTime, FormatTime)

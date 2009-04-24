@@ -363,7 +363,7 @@ button, input:
     display: block
     margin: 1.3em auto
     width: 95%
-    border: 6px solid $primary_light
+    // border: 6px solid $primary_light
 
 #right.column:
   width: 30%

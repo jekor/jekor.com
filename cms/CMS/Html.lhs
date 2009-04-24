@@ -11,11 +11,11 @@ functions. An example of this is |linkList|.
 >                           linkList, breadcrumbs, options, tableRows, accesskey,
 >                           helpButton, markdownToHtml,
 >                           AppForm, runForm, runForm', formLabel, formLabel',
->                           checkbox', tabularInput, tabularSubmit,
+>                           checkbox', tabularInput, tabularSubmit, tabularInputHint,
 >                           pager, currentPage,
 >  {- Text.XHtml.Strict -}  Html, noHtml, primHtml, stringToHtml, concatHtml,
 >                           (<<), (+++), (!), showHtmlFragment,
->                           identifier, theclass, thediv, thespan, style,
+>                           identifier, theclass, thediv, thespan, style, rel,
 >                           paragraph, pre, h1, h2, h3, br, anchor, href, script,
 >                           image, alt, unordList, form, action, method, enctype,
 >                           hidden, label, textfield, password, button, submit,
@@ -195,7 +195,7 @@ Currently this uses an icon from the FamFamFam "Mini" set
 
 > helpButton :: String -> Maybe String -> Html
 > helpButton url label' = anchor ! [href url, theclass "button"] << [
->                           image ! [src "http://s.jekor.com/icon_info.gif"],
+>                           image ! [src "http://jekor.com/image/icon_info.gif"],
 >                           maybe noHtml (\x -> stringToHtml $ " " ++ x) label' ]
 
 \subsection{Other Markup}
@@ -218,6 +218,10 @@ One thing that's missing is the ability to link the label to the input with the
 > tabularInput :: String -> Html -> Html
 > tabularInput l i = tr << [  th << (label << (l ++ ":")),
 >                             td << i ]
+
+> tabularInputHint :: String -> String -> Html -> Html
+> tabularInputHint l h i = tr << [  th << (label << (l ++ ":")),
+>                                   td << [i, stringToHtml (" " ++ h)] ]
 
 > tabularSubmit :: String -> Html
 > tabularSubmit l = tr << td ! [colspan 2] << submit "" l

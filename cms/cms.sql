@@ -39,18 +39,13 @@ CREATE TABLE article_version (
        PRIMARY KEY (name, format, version)
 );
 
-CREATE TABLE commenter (
-       email TEXT PRIMARY KEY,
-       name TEXT NOT NULL,
-       url TEXT
-);
-INSERT INTO commenter (email, name) VALUES ('root', 'root');
-
 CREATE TABLE comment (
        comment_no SERIAL PRIMARY KEY,
-       author TEXT NOT NULL REFERENCES commenter (email) ON UPDATE CASCADE,
+       email TEXT,
+       name TEXT,
+       url TEXT,
        time TIMESTAMP (0) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-       comment TEXT NOT NULL,
+       body TEXT NOT NULL,
        parent_no INTEGER REFERENCES comment (comment_no)
 );
 

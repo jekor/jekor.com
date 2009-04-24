@@ -8,7 +8,7 @@ It turns out that using our program gives us some additional consistency
 (standard header and footer) and abstraction.
 
 > module CMS.Article (  articlePage, getArticle, articleBody, getArticles,
->                       articleLinkHtml ) where
+>                       articleLinkHtml, replyToComment, commentPreview ) where
 
 > import CMS.App
 > import CMS.CGI
@@ -18,6 +18,7 @@ It turns out that using our program gives us some additional consistency
 
 > import Control.Exception (try)
 > import Data.List (deleteBy)
+> import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
 > import qualified System.IO.UTF8 as IO.UTF8
 > import qualified Text.XHtml.Strict.Formlets as F
@@ -125,17 +126,22 @@ to them.
 >           case r of
 >             Just r'  -> do
 >               comments <- queryTuples'
->                 "SELECT c.comment_no, t.level, c.author, \
->                        \c.time, c.comment \
->                 \FROM comment c, \
->                      \connectby('comment', 'comment_no', 'parent_no', ?, 0) \
->                      \AS t(comment_no int, parent_no int, level int) \
->                 \WHERE c.comment_no = t.comment_no" [r']
+>                 "SELECT c.comment_no, t.level, c.name, c.email, c.url, \
+>                        \c.time, c.body \
+>                 \FROM comment c \
+>                 \INNER JOIN connectby('comment', 'comment_no', 'parent_no', ?, 0) \
+>                   \AS t(comment_no int, parent_no int, level int) USING (comment_no)" [r']
 >               case comments of
 >                 Nothing  -> error "Error retrieving comments."
 >                 Just cs  -> do
->                   commentsHtml <- mapM (displayComment name') cs
->                   stdPage (articleTitle a) [] []
+>                   -- Discard the root comment.
+>                   commentsHtml <- mapM displayCommentWithReply $ map commentFromValues $ safeTail cs
+>                   (_, xhtml) <- runForm' $ commentForm $ fromSql r'
+>                   let comment' = thediv ! [theclass "reply"] << [
+>                                    thediv ! [theclass "comment editable toplevel"] <<
+>                                    form ! [method "POST"] << xhtml ]
+>                   stdPage (articleTitle a) [  JS "MochiKit", JS "comment",
+>                                               CSS "comment" ] []
 >                     [  thediv ! [theclass "sidebar"] << [
 >                          h2 << "Latest Articles",
 >                          unordList articles' ],
@@ -143,9 +149,15 @@ to them.
 >                          h1 << articleTitle a,
 >                          b,
 >                          paragraph ! [theclass "updated"] <<
->                            ("Last Updated " ++ show (articleTime a)),
->                          thediv ! [theclass "comments"] << commentsHtml] ]
+>                            ("Last Updated " ++ show (articleTime a)) ],
+>                          thediv ! [theclass "comments"] << [
+>                            concatHtml commentsHtml,
+>                            comment' ] ]
 >             Nothing  -> output404 ["article",name']
+
+> safeTail :: [a] -> [a]
+> safeTail [] = []
+> safeTail (_:xs) = xs
 
 Create a clickable link HTML fragment for an article.
 
@@ -153,56 +165,111 @@ Create a clickable link HTML fragment for an article.
 > articleLinkHtml a = anchor ! [href ("/article/" ++ articleName a)] <<
 >                       articleTitle a
 
-> commentBox :: Monad m => XHtmlForm m a -> XHtmlForm m a
-> commentBox = plug (\xhtml -> thediv ! [theclass "comment toplevel editable"] << xhtml)
-
 |parent| should be set to the comment number of the comment this is in reply to
 (for replies) or nothing if this comment begins a new thread (or is commenting
 directly on an object).
 
-> commentForm :: Maybe String -> AppForm (String, Maybe Integer)
+> data Comment = Comment {  commentNumber    :: Integer,
+>                           commentLevel     :: Integer,
+>                           commentParent    :: Integer,
+>                           commentRealName  :: Maybe String,
+>                           commentEmail     :: Maybe String,
+>                           commentURL       :: Maybe String,
+>                           commentTime      :: UTCTime,
+>                           commentBody      :: String }
+
+> commentForm :: String -> AppForm Comment
 > commentForm parent = plug (\xhtml -> concatHtml [
->   thediv ! [theclass "speech soft"] << xhtml,
->   thediv ! [theclass "signature"] << [
+>   thediv ! [theclass "speech soft"] << table << tbody << xhtml,
+>   thediv ! [theclass "controls"] << [
 >     helpButton "http://daringfireball.net/projects/markdown/basics" (Just "Formatting Help"),
->     isJust parent  ?  button << "Preview" +++ stringToHtml " " +++
->                       submit "" "Send Reply"
->                    $  submit "" "Create" ] ])
->     ((\a b -> (a, maybeRead =<< b))  <$> (F.textarea Nothing `check` ensures
->                 [  ((> 0)       . length, "Comment must not be empty."),
->                    ((<= 10000)  . length, "Comment must be 10,000 characters or shorter.") ])
->           <*> (nothingIfNull $ F.hidden parent))
+>     button << "Preview" +++ stringToHtml " " +++ submit "" "Send" ] ])
+>     (mkComment  <$>  F.hidden (Just parent)
+>                 <*>  nothingIfNull realNameForm
+>                 <*>  nothingIfNull emailForm
+>                 <*>  nothingIfNull urlForm
+>                 <*>  commentBodyForm)
+>     where mkComment p n e u b = Comment {  commentNumber    = undefined,
+>                                            commentLevel     = undefined,
+>                                            commentParent    = read p,
+>                                            commentRealName  = n,
+>                                            commentEmail     = e,
+>                                            commentURL       = u,
+>                                            commentTime      = undefined,
+>                                            commentBody      = b }
+
+> realNameForm :: AppForm String
+> realNameForm = (plug (tabularInputHint "Real Name" "(optional)") (F.input Nothing)) `check` ensures
+>   [  ((<= 100) . length, "Your Real Name must be 100 characters or shorter.") ]
+
+> emailForm :: AppForm String
+> emailForm = (plug (tabularInputHint "Email" "(optional)") (F.input Nothing)) `check` ensures
+>   [  ((<= 320) . length, "Your email address must be 320 characters or shorter.") ]
+
+> urlForm :: AppForm String
+> urlForm = (plug (tabularInputHint "URL" "(optional)") (F.input Nothing)) `check` ensures
+>   [  ((<= 2048) . length, "Your URL must be 2,048 characters or shorter.") ]
+
+> commentBodyForm :: AppForm String
+> commentBodyForm = plug (tabularInput "Comment") $
+>   F.textarea Nothing `check` ensures
+>     [  ((> 0)       . length, "Comment must not be empty."),
+>        ((<= 10000)  . length, "Comment must be 10,000 characters or shorter.") ]
 
 > formatSimpleTime :: UTCTime -> String
 > formatSimpleTime = formatTime' "%a %b %d, %Y %R"
 
-> displayComment :: String -> [SqlValue] -> App Html
-> displayComment name' [n, l, a, t, c]  = do
->   let n'  :: Integer  = fromSql n
->       l'  :: Integer  = fromSql l
->       a'  :: String   = fromSql a
->       t'  :: UTCTime  = fromSql t
->       c'  :: String   = fromSql c
->       id'             = "reply-" ++ (show n')
->   (_, xhtml) <- runForm' $ commentForm (Just $ show n')
->   let reply = concatHtml [
+> commentFromValues :: [SqlValue] -> Comment
+> commentFromValues [n, l, r, e, u, t, b]  =
+>   let n'  :: Integer       = fromSql n
+>       l'  :: Integer       = fromSql l
+>       r'  :: Maybe String  = fromSql r
+>       e'  :: Maybe String  = fromSql e
+>       u'  :: Maybe String  = fromSql u
+>       t'  :: UTCTime       = fromSql t
+>       b'  :: String        = fromSql b in
+>     Comment {  commentNumber    = n',
+>                commentLevel     = l',
+>                commentParent    = undefined,
+>                commentRealName  = r',
+>                commentEmail     = e',
+>                commentURL       = u',
+>                commentTime      = t',
+>                commentBody      = b' }
+> commentFromValues _ = error "Malformed comment"
+
+> displayComment :: Comment -> Html
+> displayComment c = concatHtml [
+>     paragraph ! [theclass "timestamp"] << formatSimpleTime (commentTime c),
+>     case commentEmail c of
+>       Nothing  -> noHtml
+>       Just e   -> image ! [  width "60", height "60", theclass "avatar",
+>                              src $  gravatarWith (map toLower e)
+>                                                  Nothing (size 60) (Just "identicon") ],
+>     thediv ! [theclass "speech"] << (displayCommentBody $ commentBody c),
+>     case commentRealName c of
+>       Nothing  -> noHtml
+>       Just n   -> paragraph ! [theclass "signature"] << [
+>         let a = case commentURL c of
+>                   Nothing  -> thespan
+>                   Just u   -> anchor ! [href u, rel "nofollow"] in
+>         a << ("—" ++ n) ] ]
+
+> displayCommentWithReply :: Comment -> App Html
+> displayCommentWithReply c = do
+>   (_, xhtml) <- runForm' $ commentForm $ show $ commentNumber c
+>   let id' = "reply-" ++ (show $ commentNumber c)
+>       reply = concatHtml [
 >                 button ! [  theclass $ "reveal " ++ id' ] << "Reply",
->                 paragraph ! [thestyle "clear: both"] << noHtml,
 >                 thediv ! [  thestyle "display: none",
 >                             identifier id',
 >                             theclass "reply" ] << [
 >                   thediv ! [theclass "comment editable"] <<
->                      form ! [method "POST"] << [  hidden "topic" name',
->                                                   xhtml ] ] ]
+>                      form ! [method "POST"] << xhtml ] ]
 >   return $ thediv ! [  theclass "comment toplevel",
->                        thestyle $ "margin-left:" ++ (show $ l'*2) ++ "em" ] << [
->     paragraph ! [theclass "timestamp"] << formatSimpleTime t',
->     image ! [  width "60", height "60", theclass "avatar",
->                src $  gravatarWith (map toLower a')
->                                    Nothing (size 60) (Just "wavatar") ],
->     thediv ! [theclass "speech"] << displayCommentBody c',
->     thediv ! [theclass "reply-options"] << reply ]
-> displayComment _ _             = return $ paragraph << "Error retrieving comment."
+>                        thestyle $ "margin-left:" ++ (show $ (max (0 :: Double) (fromIntegral (commentLevel c - 1)) * 1.3)) ++ "em" ] << [
+>     displayComment c,
+>     thediv ! [theclass "controls"] << reply ]
 
 We don't want comment display going out-of-sync with comment previewing.
 
@@ -211,40 +278,37 @@ We don't want comment display going out-of-sync with comment previewing.
 
 This returns the new comment number.
 
-> storeComment :: String -> String -> Maybe Integer -> App (Maybe Integer)
-> storeComment email body parent = do
->   c <- asks appDB
->   liftIO $ insertNo c  "INSERT INTO comment (author, comment, parent_no) \
->                        \VALUES (?, ?, ?)" [toSql email, toSql body, toSql parent]
->                        "comment_comment_no_seq"
+> storeComment :: Comment -> App (Maybe Integer)
+> storeComment c =
+>  quickInsertNo'  "INSERT INTO comment (parent_no, name, email, url, body) \
+>                               \VALUES (?, ?, ?, ?, ?)"
+>                  [  toSql $ commentParent c, toSql $ commentRealName c,
+>                     toSql $ commentEmail c, toSql $ commentURL c,
+>                     toSql $ commentBody c ]
+>                  "comment_comment_no_seq"
 
 > replyToComment :: App CGIResult
 > replyToComment = do
->   name'   <- getRequiredInput "name"
->   email   <- getRequiredInput "email"
->   parent  <- getInput "parent"
->   res <- runForm (commentForm parent) $ Right noHtml
+>   res <- runForm (commentForm "0") $ Right noHtml
 >   case res of
->     Left xhtml            -> outputJSON [  ("html", showHtmlFragment $ thediv ! [theclass "comment editable"] << xhtml),
->                                            ("status", "incomplete") ]
->     Right (body,parent')  -> do
->       res' <- withTransaction' $ do
->         commentNo <- storeComment email body parent'
->         res'' <- queryTuple'  "SELECT c.comment_no, 0 as level, \
->                                      \c.author, c.time, c.comment \
->                               \FROM comment c, member m \
->                               \WHERE comment_no = ?"
->                               [toSql commentNo]
->         liftIO . commit =<< asks appDB
->         return $ fromJust res''
+>     Left xhtml     -> outputJSON [  ("html", showHtmlFragment $ thediv ! [theclass "comment editable"] << xhtml),
+>                                     ("status", "incomplete") ]
+>     Right comment  -> do
+>       commentNo <- storeComment comment
+>       res' <- queryTuple'  "SELECT c.comment_no, 0 as level, \
+>                                   \c.name, c.email, c.url, \
+>                                   \c.time, c.body \
+>                            \FROM comment c \
+>                            \WHERE comment_no = ?"
+>                            [toSql commentNo]
 >       case res' of
 >         Nothing  -> outputJSON [  ("html", "Error posting comment."),
 >                                   ("status", "error") ]
 >         Just c   -> do
 >           c' <- asks appDB
 >           liftIO $ commit c'
->           comment <- displayComment name' c
->           outputJSON [  ("html", showHtmlFragment comment),
+>           comment' <- displayCommentWithReply $ commentFromValues c
+>           outputJSON [  ("html", showHtmlFragment comment'),
 >                         ("status", "accepted") ]
 
 We need to make sure that this doesn't go out of sync with displayComment.
@@ -253,6 +317,11 @@ Does this lead to XSS vulnerabilities?
 
 > commentPreview :: App CGIResult
 > commentPreview = do
->   comment <- getRequiredInput "comment"
->   outputJSON [  ("html", showHtmlFragment $ displayCommentBody comment),
->                 ("status", "OK") ]
+>   res <- runForm (commentForm "0") $ Right noHtml
+>   case res of
+>     Left xhtml     -> outputJSON [  ("html", showHtmlFragment $ thediv ! [theclass "comment editable"] << xhtml),
+>                                     ("status", "incomplete") ]
+>     Right comment  -> do
+>       t <- liftIO getCurrentTime
+>       outputJSON [  ("html", showHtmlFragment $ displayComment (comment {commentTime = t})),
+>                     ("status", "OK") ]

@@ -199,7 +199,10 @@ function for a @GET@ and to another for a @POST@.
 
 > dispatch "GET" ["article",x] = articlePage x
 
-First, we check to see if the URL maps to an article. If so, we display it.
+> dispatch "GET"   ["comment","reply"] = replyToComment
+> dispatch "POST"  ["comment","reply"] = replyToComment
+
+> dispatch "GET"   ["comment","preview"] = commentPreview
 
 > dispatch "GET" path = output404 path
 
@@ -227,7 +230,9 @@ and associated functionality by using the stdPage function.
 >       boxer "Programs" [
 >         anchor ! [href "/emacs/"] << "My Documented .emacs",
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
->         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes" ] ] ]
+>         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes" ],
+>       boxer "About Me" [
+>         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé" ] ] ]
 
 > boxer :: String -> [Html] -> Html
 > boxer t ls = thediv ! [theclass "boxer"] << [
