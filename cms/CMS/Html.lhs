@@ -12,7 +12,7 @@ functions. An example of this is |linkList|.
 >                           helpButton, markdownToHtml,
 >                           AppForm, runForm, runForm', formLabel, formLabel',
 >                           checkbox', tabularInput, tabularSubmit, tabularInputHint,
->                           pager, currentPage,
+>                           pager, currentPage, copyrightStatement,
 >  {- Text.XHtml.Strict -}  Html, noHtml, primHtml, stringToHtml, concatHtml,
 >                           (<<), (+++), (!), showHtmlFragment,
 >                           identifier, theclass, thediv, thespan, style, rel,
@@ -68,6 +68,7 @@ footer. It also includes @page.css@.
 >   output' $ renderHtml $ header <<
 >     [  thetitle << t,
 >        concatHtml (map includeDep ([CSS "page"] ++ deps)),
+>        thelink ! [href "/rss", thetype "application/rss+xml", rel "alternate", title "Site-wide RSS Feed"] << noHtml,
 >        concatHtml head' ] +++
 >     body << [  headerB,
 >                jsNotice,
@@ -108,7 +109,7 @@ for review and a logout button.
 >   return $ thediv ! [identifier "header-bar"] <<
 >     [  anchor ! [theclass "logo", href "/", accesskey "1"] << [
 >          stringToHtml "jekor.com", br,
->          thespan ! [theclass "tagline"] << "Blah?" ],
+>          thespan ! [theclass "tagline"] << "Programming Philosophy" ],
 >        topLinks,
 >        thediv ! [theclass "clear"] << noHtml ]
 
@@ -123,7 +124,10 @@ The footer bar is more simple. It just includes some links to static content.
 > footerBar = do
 >   copy <- copyrightNotice
 >   return $ thediv ! [identifier "footer-bar"] <<
->     [  copy,
+>     [  linkList
+>        [  anchor ! [href "/rss"] << "RSS",
+>           anchor ! [href "/privacy"] << "privacy policy" ],
+>        copy,
 >        googleAnalyticsTag ]
 
 We want a copyright notice at the bottom of every page. Since this is a
@@ -137,6 +141,11 @@ generation time (now).
 >     [  stringToHtml "© 2008–",
 >        stringToHtml ((show year) ++ " "),
 >        anchor ! [href "http://jekor.com/"] << "Chris Forno" ]
+
+> copyrightStatement :: App String
+> copyrightStatement = do
+>   year <- liftIO currentYear
+>   return $ "© 2008–" ++ (show year) ++ " Chris Forno"
 
 > googleAnalyticsTag :: Html
 > googleAnalyticsTag = noHtml

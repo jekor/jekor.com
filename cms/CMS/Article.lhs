@@ -8,7 +8,8 @@ It turns out that using our program gives us some additional consistency
 (standard header and footer) and abstraction.
 
 > module CMS.Article (  articlePage, getArticle, articleBody, getArticles,
->                       articleLinkHtml, replyToComment, commentPreview ) where
+>                       articleLinkHtml, replyToComment, commentPreview,
+>                       rssFeed ) where
 
 > import CMS.App
 > import CMS.CGI
@@ -17,10 +18,13 @@ It turns out that using our program gives us some additional consistency
 > import CMS.Utils hiding ((<$$>))
 
 > import Control.Exception (try)
+> import Data.Convertible.Base (convert)
 > import Data.List (deleteBy)
 > import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
+> import Network.URI (URI(..), parseURI)
 > import qualified System.IO.UTF8 as IO.UTF8
+> import Text.RSS
 > import qualified Text.XHtml.Strict.Formlets as F
 
 All articles have some common metadata.
@@ -150,7 +154,7 @@ to them.
 >                          b,
 >                          paragraph ! [theclass "updated"] <<
 >                            ("Last Updated " ++ show (articleTime a)) ],
->                          thediv ! [theclass "comments"] << [
+>                          thediv ! [identifier "comments", theclass "comments"] << [
 >                            concatHtml commentsHtml,
 >                            comment' ] ]
 >             Nothing  -> output404 ["article",name']
@@ -325,3 +329,35 @@ Does this lead to XSS vulnerabilities?
 >       t <- liftIO getCurrentTime
 >       outputJSON [  ("html", showHtmlFragment $ displayComment (comment {commentTime = t})),
 >                     ("status", "OK") ]
+
+> itemFromArticle :: Article -> App (Maybe Item)
+> itemFromArticle a = do
+>   body <- articleBody a
+>   return $ case body of
+>     Nothing  -> Nothing
+>     Just b   -> let uri = fromJust $ parseURI $ "http://jekor.com/article/" ++ articleName a in
+>       Just [  Title        $ articleTitle a,
+>               Link         $ uri,
+>               Description  $ (take 256 $ showHtmlFragment b) ++ (" [...]"),
+>               Comments     $ uri {uriFragment = "#comments"},
+>               Guid         True $ show uri,
+>               PubDate      $ convert $ articleTime a ]
+
+For now, our site-wide RSS feed just contains articles.
+
+> rssFeed :: App CGIResult
+> rssFeed = do
+>   articles <- getArticles 10
+>   copyright <- copyrightStatement
+>   items <- catMaybes <$> maybe (return []) (mapM itemFromArticle) articles
+>   let  lastUpdate = case articles of
+>                       Nothing  -> []
+>                       Just as  -> [LastBuildDate $ convert $ articleTime $ head as]
+>   output' $ showXML $ rssToXML $
+>     RSS  "jekor.com" (fromJust $ parseURI "http://jekor.com/")
+>          "Programming Philosophy (site-wide feed)"
+>          ([  Language "en-us",
+>              Copyright copyright,
+>              ChannelCategory Nothing "Programming",
+>              ChannelCategory Nothing "Functional Programming" ] ++ lastUpdate)
+>          items

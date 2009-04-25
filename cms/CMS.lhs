@@ -204,6 +204,8 @@ function for a @GET@ and to another for a @POST@.
 
 > dispatch "GET"   ["comment","preview"] = commentPreview
 
+> dispatch "GET" ["rss"] = rssFeed
+
 > dispatch "GET" path = output404 path
 
 For now we are read-only, baby.
