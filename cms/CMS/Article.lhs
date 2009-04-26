@@ -359,5 +359,7 @@ For now, our site-wide RSS feed just contains articles.
 >          ([  Language "en-us",
 >              Copyright copyright,
 >              ChannelCategory Nothing "Programming",
->              ChannelCategory Nothing "Functional Programming" ] ++ lastUpdate)
+>              ChannelCategory Nothing "Programming Philosophy",
+>              ChannelCategory Nothing "Functional Programming",
+>              ChannelCategory Nothing "Literate Programming" ] ++ lastUpdate)
 >          items

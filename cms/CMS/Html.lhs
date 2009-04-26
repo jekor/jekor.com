@@ -125,8 +125,7 @@ The footer bar is more simple. It just includes some links to static content.
 >   copy <- copyrightNotice
 >   return $ thediv ! [identifier "footer-bar"] <<
 >     [  linkList
->        [  anchor ! [href "/rss"] << "RSS",
->           anchor ! [href "/privacy"] << "privacy policy" ],
+>        [  anchor ! [href "/rss"] << "RSS" ],
 >        copy,
 >        googleAnalyticsTag ]
 

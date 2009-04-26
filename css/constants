@@ -3,8 +3,7 @@
 bar_and_box_background = #DFDFDF
 bar_and_box_border = #CCC
 
-primary_light = #7fa2f1
-primary_dark  = #63a61b
+primary_light = #81A61B
 
 // CleverCSS seems to have a parsing error with URLs containing a colon in
 // function calls. For now, we need to top-level domains in variables to work

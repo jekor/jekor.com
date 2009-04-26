@@ -230,7 +230,7 @@ and associated functionality by using the stdPage function.
 >       image ! [src "/image/word-cloud.png", alt "word (tag) cloud"] ],
 >     thediv ! [theclass "column", identifier "right"] << [
 >       boxer "Programs" [
->         anchor ! [href "/emacs/"] << "My Documented .emacs",
+>         anchor ! [href "/emacs/dot-emacs.pdf"] << "My Literate .emacs",
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
 >         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes" ],
 >       boxer "About Me" [
