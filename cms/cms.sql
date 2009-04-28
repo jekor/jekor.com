@@ -59,7 +59,7 @@ CREATE TABLE article_comments (
 CREATE RULE "add article" AS
   ON INSERT TO article
   DO ALSO (
-    INSERT INTO comment (author, comment) VALUES ('root', '');
+    INSERT INTO comment (body) VALUES ('');
     INSERT INTO article_comments (name, root_comment)
                           VALUES (NEW.name, (SELECT currval('comment_comment_no_seq')));
   );

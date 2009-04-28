@@ -1,12 +1,15 @@
 // This is the background color for major blocks in the interface.
 // bar_and_box_background = #CCC
-bar_and_box_background = #DFDFDF
-bar_and_box_border = #CCC
+// bar_and_box_background = #DFDFDF
+// bar_and_box_border = #CCC
+bar_and_box_background = #EEEEEE
+bar_and_box_border = #DFDFDF
 
-primary_light = #81A61B
+// primary_light = #81A61B
+primary_light = #73BF1F
 
 // CleverCSS seems to have a parsing error with URLs containing a colon in
 // function calls. For now, we need to top-level domains in variables to work
 // around the parser's defect. This actually works out pretty well for us so
 // that we only have to make one change if we ever change the image host.
-images = "http://jekor.com/"
+images = "http://jekor.com/image/"

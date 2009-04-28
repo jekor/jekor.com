@@ -165,6 +165,7 @@ tr.odd:hover, tr.even:hover:
     top: 0.5em
     bottom: 0.5em
   font-family: Verdana, sans-serif
+  background: url($images + "header-gradient.gif") repeat-x;
   a.logo:
     display: block
     float: left
@@ -205,6 +206,7 @@ tr.odd:hover, tr.even:hover:
   padding->
     top: 0.5em
     bottom: 0.5em
+  background: url($images + "footer-gradient.gif") repeat-x;
   *:
     margin->
       top: 0.125em
