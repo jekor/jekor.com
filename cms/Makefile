@@ -19,8 +19,9 @@ CMS.tex : $(lhss)
 
 install : cms.fcgi
 	install -o root -g root $(fcgi) /usr/local/bin
-	-killall $(fcgi)
-	spawn-fcgi -f "/usr/local/bin/$(fcgi) 2>> /tmp/cms.error.log" -p 10034 -u lighttpd -g lighttpd
+# The following is now handled by an init script.
+#	-killall $(fcgi)
+#	spawn-fcgi -f "/usr/local/bin/$(fcgi) 2>> /tmp/cms.error.log" -p 10034 -u lighttpd -g lighttpd
 
 tags : $(lhss)
 	hasktags -e $^
