@@ -3,7 +3,7 @@
 Much of Vocabulink consists of simple, program-generated HTML. Rather than use
 templates or HTML in strings, we use an HTML combinator library
 (Text.XHtml.Strict). This makes it almost certain that our HTML will be well
-formed (although we have guarantee that it will be valid). But more
+formed (although we have no guarantee that it will be valid). But more
 importantly, it allows us to use abstraction to get higher-level HTML-based
 functions. An example of this is |linkList|.
 
@@ -19,8 +19,7 @@ functions. An example of this is |linkList|.
 >                           paragraph, pre, h1, h2, h3, br, anchor, href, script,
 >                           image, alt, unordList, form, action, method, enctype,
 >                           hidden, label, textfield, password, button, submit,
->                           fieldset, legend, afile,
->                           textarea, select, widget,
+>                           fieldset, legend, afile, textarea, select, widget,
 >                           thestyle, src, width, height, value, name,
 >                           cols, rows, colspan, caption,
 >                           table, thead, tbody, tfoot, th, tr, td,
@@ -32,11 +31,6 @@ functions. An example of this is |linkList|.
 > import CMS.App
 > import CMS.CGI
 > import CMS.Utils
-
-Currently Text.XHtml does not automatically handle UTF-8 output. We have to
-carefully encode everything we need to. If we don't, non-ASCII (non-iso8859-1?)
-characters will be converted to entities. This automatic conversion may be a
-nice fallback, but it can mask an underlying problem.
 
 > import Control.Arrow (second)
 > import Data.List (intersperse, find)
@@ -65,7 +59,7 @@ footer. It also includes @page.css@.
 >   headerB  <- headerBar
 >   footerB  <- footerBar
 >   setHeader "Content-Type" "text/html; charset=utf-8"
->   output' $ renderHtml $ header <<
+>   output' True $ renderHtml $ header <<
 >     [  thetitle << t,
 >        concatHtml (map includeDep ([CSS "page"] ++ deps)),
 >        thelink ! [href "/rss", thetype "application/rss+xml", rel "alternate", title "Site-wide RSS Feed"] << noHtml,

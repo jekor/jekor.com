@@ -32,7 +32,9 @@ with |readInput|). This is a common pattern in other modules.
 > import Control.Exception (Exception(..))
 > import Data.ByteString.Lazy.UTF8 (fromString)
 > import Data.Char (toLower, isAlphaNum)
-> import Network.URI (uriPath)
+> import qualified Network.Memcache.Protocol as Memcached
+> import qualified Network.Memcache as Memcache
+> import Network.URI (uriPath, uriQuery)
 > import Text.JSON (JSON, encode, toJSObject)
 
 We're going to hide some Network.CGI functions so that we can override them
@@ -83,15 +85,28 @@ actual 403 error.
 > outputUnauthorized = outputError 403 "Unauthorized" []
 
 The default |output| method provided by |Network.CGI| does not automatically
-encode the input.
+encode the input. We also use this function to place the document into
+memcached (which will then be used by nginx for subsequent requests).
 
-> output' :: MonadCGI m => String -> m CGIResult
-> output' = return . CGIOutput . fromString
+TODO: Exception handling.
+
+> output' :: (MonadCGI m, MonadIO m) => Bool -> String -> m CGIResult
+> output' cache s = do
+>   uri     <- requestURI
+>   method  <- requestMethod
+>   liftIO $ case (method, cache) of
+>     ("GET", True)  -> do  memcache <- Memcached.connect "127.0.0.1" 11211
+>                           Memcache.set memcache  ("jekor.com:" ++ uriPath uri ++ uriQuery uri)
+>                                                  (encodeString s)
+>                           Memcached.disconnect memcache
+>     _      -> return ()
+>   return $ CGIOutput $ fromString s
 
 Also, we do not always output HTML. Sometimes we output JSON or HTML fragments.
 
 > outputText :: (MonadCGI m, MonadIO m) => String -> m CGIResult
-> outputText s = setHeader "Content-Type" "text/plain; charset=utf-8" >> output' s
+> outputText s =  setHeader "Content-Type" "text/plain; charset=utf-8" >>
+>                 output' False s
 
 Output as JSON an associative list.
 

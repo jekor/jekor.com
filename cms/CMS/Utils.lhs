@@ -3,7 +3,7 @@
 Here are some functions that aren't specific to Vocabulink, but that don't
 exist in any libraries I know of.
 
-> module CMS.Utils (         if', (?), safeHead, currentDay, currentYear,
+> module CMS.Utils (                if', (?), safeHead, currentDay, currentYear,
 >                                   basename, translate, formatTime', (<$$>),
 >  {- Codec.Binary.UTF8.String -}   encodeString, decodeString,
 >  {- Control.Applicative -}        pure, (<$>), (<*>),

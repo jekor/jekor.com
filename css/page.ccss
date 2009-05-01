@@ -376,7 +376,9 @@ button, input:
 
 .sidebar:
   float: left
-  width: 25%
+  width: 22.5%
+  h2, li:
+    text-align: center
 
 .article:
   width: 50%
@@ -415,3 +417,17 @@ button, input:
 
 p.image:
   text-align: center
+
+table.muse-table:
+  margin->
+    left: auto
+    right: auto
+  tbody td:
+    border-top: 1px solid black
+  tbody td, th:
+    border-right: 1px solid black
+  th:
+    font-weight: bold
+  th, td:
+    text-align: center
+    padding: 0.33em

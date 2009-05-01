@@ -22,6 +22,8 @@ It turns out that using our program gives us some additional consistency
 > import Data.List (deleteBy)
 > import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
+> import qualified Network.Memcache.Protocol as Memcached
+> import qualified Network.Memcache as Memcache
 > import Network.URI (URI(..), parseURI)
 > import qualified System.IO.UTF8 as IO.UTF8
 > import Text.RSS
@@ -311,6 +313,12 @@ This returns the new comment number.
 >         Just c   -> do
 >           c' <- asks appDB
 >           liftIO $ commit c'
+>           liftIO $ do  memcache <- Memcached.connect "127.0.0.1" 11211
+>                        -- Our cache isn't that big, so the easiest thing to
+>                        -- do is flush the whole thing rather than try to
+>                        -- figure out which article this comment is for.
+>                        Memcache.flush memcache
+>                        Memcached.disconnect memcache
 >           comment' <- displayCommentWithReply $ commentFromValues c
 >           outputJSON [  ("html", showHtmlFragment comment'),
 >                         ("status", "accepted") ]
@@ -353,7 +361,7 @@ For now, our site-wide RSS feed just contains articles.
 >   let  lastUpdate = case articles of
 >                       Nothing  -> []
 >                       Just as  -> [LastBuildDate $ convert $ articleTime $ head as]
->   output' $ showXML $ rssToXML $
+>   output' True $ showXML $ rssToXML $
 >     RSS  "jekor.com" (fromJust $ parseURI "http://jekor.com/")
 >          "Programming Philosophy (site-wide feed)"
 >          ([  Language "en-us",
