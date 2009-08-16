@@ -19,7 +19,7 @@ It turns out that using our program gives us some additional consistency
 
 > import Control.Exception (try)
 > import Data.Convertible.Base (convert)
-> import Data.List (deleteBy)
+> import Data.List (deleteBy, findIndices)
 > import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
 > import qualified Network.Memcache.Protocol as Memcached
@@ -119,10 +119,20 @@ to them.
 >   case article of
 >     Nothing  -> output404 ["article", name']
 >     Just a   -> do
->       articles <- maybe Nothing (\a' -> Just $ deleteBy (\x y -> articleName x == articleName y) a a') <$> getArticles 10
->       let articles' = case articles of
->                     Nothing  -> return $ paragraph << "Error retrieving articles."
->                     Just as  -> map articleLinkHtml $ as
+>       articles <- getArticles 10
+>       let (articles', prevArticle, nextArticle) = case articles of
+>             Nothing  -> (  [paragraph << "Error retrieving articles."],
+>                            paragraph << "Error retrieving article.",
+>                            paragraph << "Error retrieving article." )
+>             Just as  -> let  as' = cycle as
+>                              i = findIndices (\x -> articleName x == articleName a) as'
+>                              i' = i !! 2
+>                              prevArticle' = as' !! (i' - 1)
+>                              nextArticle' = as' !! (i' + 1)
+>                              articles'' = deleteBy (\x y -> articleName x == articleName y) a as in
+>                         (  map articleLinkHtml articles'',
+>                            articleLinkHtml prevArticle',
+>                            articleLinkHtml nextArticle' )
 >       body <- articleBody a
 >       case body of
 >         Nothing  -> error "Error reading article body."
@@ -137,15 +147,20 @@ to them.
 >                 \FROM comment c \
 >                 \INNER JOIN connectby('comment', 'comment_no', 'parent_no', ?, 0) \
 >                   \AS t(comment_no int, parent_no int, level int) USING (comment_no)" [r']
->               case comments of
->                 Nothing  -> error "Error retrieving comments."
->                 Just cs  -> do
+>               moreComments <- queryAttribute'
+>                 "SELECT url FROM article_see_also \
+>                 \WHERE name = ?" [toSql name']
+>               case (comments, moreComments) of
+>                 (Just cs, Just mcs)  -> do
+>                   let moarComments = map (\x -> anchor ! [href x] << x) (map fromSql mcs)
 >                   -- Discard the root comment.
 >                   commentsHtml <- mapM displayCommentWithReply $ map commentFromValues $ safeTail cs
 >                   (_, xhtml) <- runForm' $ commentForm $ fromSql r'
 >                   let comment' = thediv ! [theclass "reply"] << [
 >                                    thediv ! [theclass "comment editable toplevel"] <<
 >                                    form ! [method "POST"] << xhtml ]
+>                       commentCount = max 0 (length cs - 1)
+>                       commentLink = anchor ! [href "#comments"] << (show commentCount ++ " comment" ++ (commentCount == 1 ? "" $ "s"))
 >                   stdPage (articleTitle a) [  JS "MochiKit", JS "comment",
 >                                               CSS "comment" ] []
 >                     [  thediv ! [theclass "sidebar"] << [
@@ -156,9 +171,18 @@ to them.
 >                          b,
 >                          paragraph ! [theclass "updated"] <<
 >                            ("Last Updated " ++ show (articleTime a)) ],
+>                          paragraph ! [thestyle "clear: both; text-align: center"] << commentLink,
 >                          thediv ! [identifier "comments", theclass "comments"] << [
 >                            concatHtml commentsHtml,
->                            comment' ] ]
+>                            comment' ],
+>                          thediv ! [identifier "related"] << [
+>                            thespan ! [theclass "prev"] << [stringToHtml "Prev: ", prevArticle],
+>                            thespan ! [theclass "next"] << [stringToHtml "Next: ", nextArticle],
+>                            paragraph ! [thestyle "clear: both"] << noHtml ],
+>                          thediv ! [identifier "see-also"] << [
+>                            length moarComments == 0 ? noHtml $ h3 << "See Also",
+>                            unordList moarComments ] ]
+>                 _                    -> error "Error retrieving comments."
 >             Nothing  -> output404 ["article",name']
 
 > safeTail :: [a] -> [a]

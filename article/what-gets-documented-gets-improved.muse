@@ -1,0 +1,115 @@
+#title What Gets Documented Gets Improved
+#author Chris Forno (jekor)
+#date 2009-01-12
+
+There's a saying in business: "What gets measured gets improved."
+
+The same holds for programming. Additionally: "What gets documented gets improved."
+
+* .emacs
+
+I used to edit my .emacs[1] directly. One day I decided to convert it into a literate program[2]. So over the course of a week I went about extracting chunks of code, documenting them, and rearranging them.
+
+<literal>
+<blockquote class="right">
+<p>
+“We tend to read the code only long enough to understand it for the purpose(s) we currently have in mind.”
+</p>
+</blockquote>
+</literal>
+
+The process of converting the file to literate form alone improved it. There were blocks of old unused code I deleted. When I came across lines I'd written when I was less experienced with Emacs, I was able to rewrite them in a more compact and understandable form. And I fixed some annoyances that had always bugged me but only became clear to me as I was reading through the code.
+
+You could argue that just the act of reading the file was what improved the code. But you'd be missing the point. Why would I have read the file if I weren't documenting it? The only reasons for which I've seen people read code are:
+
+ 1. to fix an error
+ 2. to understand the code in order to extend it
+
+Both of these are shallow dips into the code. When performing them, the objective is to get in and get out. We tend to read the code only long enough to understand it for the purpose(s) we currently have in mind. But we're missing a wider, broader understanding of the code. And without that understanding, we can only make focused improvements.
+
+* Most Programming Produces Incremental Change Due to Lack of Gestalt Knowledge
+
+There is nothing wrong with incremental change. There is tremendous power in [[http://en.wikipedia.org/wiki/Kaizen][Kaizen]]. And maybe that's why it's such a prevalent development model.
+
+But in order to achieve revolutionary improvements in code, we need insight. We need to be able to make connections in the code. The deeper we understand the code, the more we can hold of it in our head[3].
+
+* The 3 Layers of Program Documentation
+
+[[what-gets-documented-gets-improved/documentation-pyramid.png]]
+
+
+     |          | comments     | literate text           | book           |
+     |----------+--------------+-------------------------+----------------|
+     | **detail**   | function     | inter-function          | super-function |
+     | **location** | source file  | source file             | external file  |
+
+** Comments
+
+We know we need comments. Most experienced programmers write them.
+
+Comments are the most detailed level of documentation. They deal with concepts smaller at the function level.
+
+** Literate Text
+
+Literate text wraps and contextualizes the comments and the blocks of code that they inhabit. It explains the connections and relationships between blocks. It's the glue between paragraphs[4].
+
+Good literate text is a narrative. It explains concepts as they come along in the natural flow of the program.
+
+** Handbook
+
+The handbook means business. It's about getting things done.
+
+The handbook for your program guides new programmers—or yourself once you've been away from the code for too long—to the parts they are interested in now. It provides a map, an overview of the territory that the program covers.
+
+A handbook can have howtos, FAQs, tutorials. If your program is for other programmers, this would be your program's developer website.
+
+* Documenting Your Code Exploits Human Nature
+
+We enjoy demonstrating our knowledge to other people. We want to be recognized for how smart we are. We like to show off our creations. And excepting sociopaths, we enjoy helping other people.
+
+Many programming literati bemoan the lose of craftsmanship in our field. But if we observe the programming process, we can see why it happens.
+
+A lone programmer[5] composes a program fragment at his terminal. He's lost in the moment as he explores the problem space. He follows trails of thought along paths of reasoning, sometimes backtracking when he hits a dead end. He knows the result he's trying to achieve and why. And he's most likely being driven by a deadline, whether imposed by someone else or unconsciously by himself.
+
+When the programmer achieves his desired result, he feels a rush of satisfaction at solving a problem and creating something. He might not by 100% satisfied with his solution or the approach he took to it, but he reasons that he can improve upon it later. For now he is justifiably exhausted and his mind needs a break.
+
+* Writing Code Should Be a 2-Pass Process
+
+At least.
+
+And fixing errors doesn't count as a 2nd pass.
+
+Comments are for documenting code as you write it. And documenting code as you write it can be a distraction.
+
+As with video encoding, we can get a better result with a 2-pass approach. In the first pass you can focus on writing the code. Sprinkle comments as you go for any details that might be unclear.
+
+But now your code is literature. It's a document. And you wouldn't write a document in 1 pass. That's called the first draft! You would proofread it at least once. As you proofread a document, you catch mistakes that are so obvious you're amazed that you made them in the first place. And as you subvocalize what you read you find awkward parts of the document that you need to rewrite. You may change how a sentence starts or move a paragraph up or down.
+
+The same should apply to programming. Just as a sentence or paragraph may not make sense after being written on the fly, a function may not make sense. Or perhaps one paragraph doesn't lead cleanly into another. Maybe a paragraph is trying to say too much and needs to be broken into smaller pieces.
+
+The proofreading becomes even more valuable once you've been away from the document for a while, especially after a period of sleep. Much of what you had stored in short-term memory has been flushed out and you see the document more from the perspective of someone who has never seen it before. So there's no need to force yourself to document as you go. Take your time. Back off from the code for a while. Give your mind room to breathe. But come back later and take a look, otherwise someone will be reading your first draft in the future.
+
+* You Benefit from [[http://en.wikipedia.org/wiki/Cognitive_dissonance][Cognitive Dissonance]]
+
+When you believe that your program will be read (because you've provided it in a convenient format which shows value) and you have pride in either the code or the documentation, you will work to improve the other.
+
+If one chapter of your book or section of your document looks full, impressive, and is a pleasure to read and you come across another section that falls flat, you'll naturally want to fix it. And because you have your program in printed form, you'll see those sections. They might begin to gnaw at you after a time.
+
+It's like having a clean room. When you've cleaned your room you're more alert and intent on keeping it clean. You know the effort it took you to clean it, and you don't want to have to repeat it. Besides, you get enjoyment from the feeling of having a clean room and want it to last.
+
+; * At First It's a Psychological Trick
+
+; ...until someone reads the documentation for your first program. With experience, you know that any program that lasts will eventually be read (many times). This is even more true for program documentation. And you wouldn't bother writing documentation for a throw-away program, right?
+
+; * Documenting Code Produces Gestalt Knowledge
+
+Footnotes: 
+[1]  A .emacs file is a configuration file for the [[http://www.gnu.org/software/emacs/][Emacs]] editor. It's actually a program written in the [[http://en.wikipedia.org/wiki/Emacs_Lisp][Elisp]] programming language. You can find mine [[/emacs/dot-emacs.pdf][here]].
+
+[2]  I used the [[http://www.cs.tufts.edu/~nr/noweb/][Noweb]] tool, if you're curious.
+
+[3]  See the studies of chess masters conducted by [[http://en.wikipedia.org/wiki/Alfred_Binet][Alfred Binet]].
+
+[4]  If you're a TeXnician, it can help to think of it as glue.
+
+[5]  Almost all programmers are lone programmers. Even when working in teams, most programmers are alone at their terminal as they actually compose their program fragments. The only exception I know of is in [[http://en.wikipedia.org/wiki/Pair_programming][pair programming]]. And I doubt that even in a full Extreme Programming shop that the majority of code is written while working as pairs. How do you achieve [[http://en.wikipedia.org/wiki/Flow_(psychology)][flow]] without solitude?

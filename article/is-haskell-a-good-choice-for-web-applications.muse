@@ -1,0 +1,136 @@
+#title Is Haskell a Good Choice for Web Applications?
+#date 2009-04-25 21:35:00 -0700
+
+; #title Is Haskell Ready for Web Applications?
+
+Haskell is the darling of the functional programming crowd. But is it ready for serious web applications? Or is it too immature and academic?
+
+I've spent the last 7 months creating a website with Haskell.[1] I'll share the frustrations I encountered and the triumphs I experienced. And I'll explain the positives and negatives of the language for those of you who are thinking about writing your own web application in Haskell.
+
+<literal>
+<blockquote class="right">
+<p>
+“I just finished implementing a simple FastCGI program in Haskell. I wrote it to understand how Haskell web programming works and to see if it's sufficient for building a language learning site. My conclusion is that not only is it sufficient, it's much more fun than building in PHP.”<br>2008-03-16 23:19
+</p>
+</blockquote>
+</literal>
+
+In the margins I've included some quotes from my programming journal.
+
+I've also released the [[/vocabulink/vocabulink.tar.gz][source code]] for the website under the GNU Affero Public License.[2] It's roughly 2,000 lines of Haskell, along with some SQL, Javascript, and CSS. The main program is written in a literate style and I've included the resulting [[/vocabulink/vocabulink.pdf][75-page PDF]]. You can read through it and draw your own conclusions.[3]
+
+* Features
+
+The code demonstrates:
+
+ - using FastCGI to communicate with a web server (nginx in this case)
+ - moving data to and from a PostgreSQL database (HDBC)
+ - authenticating users with cookies
+ - interacting with users via asynchronous JavaScript and JSON (AJAJ)
+ - collecting data with HTML forms (formlets)
+ - communicating with users via email
+ - caching with memcached
+ - implementing a custom forums system (with threaded comments)
+
+The main program's name is Vocabulink, and you can see it in action at [[http://www.vocabulink.com/][www.vocabulink.com]].
+
+* Can Haskell Do It?
+
+<literal>
+<blockquote class="right">
+<p>
+“I had my doubts again with choosing to write in Haskell. Many things that
+seemingly would be simple to do in PHP require a lot more up-front effort in
+Haskell.”<br>2009-01-15 00:14
+</p>
+</blockquote>
+</literal>
+
+I was concerned that Haskell wouldn't be able to handle the task. I'd had experience working on large websites with Perl and PHP, and a part of me doubted that Haskell's no-compromises approach would work for anything serious and large-scale. At the time, "Real World Haskell" wasn't yet published, and I could find no examples of large Haskell web applications.[4] Much of the libraries in Hackage seemed to be toys compared to what I was used to. 
+
+But now, having launched the site I can say: yes. Not only is Haskell capable, it's an excellent choice. The Haskell environment is surprisingly rich and mature. But more importantly, using Haskell has forced me to keep my code clear and simple. It's been maddening at times (the language really can feel like a straightjacket), but I've come to appreciate the discipline it enforces as the code has grown.
+
+* Libraries
+
+I've found a library for almost everything I've needed, and they work together extremely well. Vocabulink makes use of 12 libraries, not including some that come [[http://www.haskell.org/ghc/docs/latest/html/libraries/index.html][prepackaged with GHC]].
+
+More interesting than the availability of the libraries has been their simplicity. Even without documentation they're surprisingly easy to understand, just by reading their source code. This also makes them easy to modify, should you need to.[5] And they've been an excellent source of ideas and guidance in how to use the language.
+
+* Haskell and SQL
+
+Unfortunately, Haskell does not yet have a mature way of safely interfacing with a relational database[6]. You have to build your SQL commands as strings in much the same way as with most other languages. [[http://software.complete.org/software/projects/show/hdbc][HDBC]] *does* take care of preventing SQL injection attacks, but that's about it.
+
+This is one area where you're not yet going to see a benefit from using Haskell. In fact, Haskell can be a little bit more verbose and awkward until you get used to passing around database handles in your monads. But you'll get used to it.
+
+* Monads
+
+<literal>
+<blockquote class="right">
+<p>
+“Before now, I thought I had learned most of the abstractions out there, such as anonymous functions and high order functions. I thought monads were just something to help with doing imperative-style programming while staying safe. I had no idea they could lead to such interesting expressive capabilities.”<br>2008-11-07 00:02
+</p>
+</blockquote>
+</literal>
+
+What article about Haskell would be complete without mentioning monads? Guess what, I still don't fully understand them. But I was able to write a useful program anyway. So if you don't understand them yet either, don't let that keep you from writing some serious code. It's the best way to learn.
+
+* HTML Combinators (and Formlets)
+
+I love HTML combinators. It surprises me that so much time and effort has been put into template languages. By working with templates, you lose much of the ability to abstract.
+
+An excellent example of this is the Haskell formlets library. While it still has some rough edges, it makes working with forms much nicer than any other abstraction I've found.[7]
+
+* Asynchronous JavaScript (AJAX)
+
+If you know how to write JavaScript by hand, working with Haskell is no different than working with PHP when it comes to creating dynamic pages. Haskell has good JSON and XML libraries for generating and parsing what you need.
+
+<literal>
+<blockquote class="right">
+<p>
+“For some roughly 400-500 lines of code I've added a basic, yet fully-functional forum to Vocabulink, including an administrative interface for creating forums and fully-threaded comments.”<br>2009-03-15 00:29
+</p>
+</blockquote>
+</literal>
+
+* Debugging
+
+I thought that lack of a good traditional debugger would be a major drawback and hurdle. It turns out that it isn't. Reasoning about code can uncover a lot more in a pure language than you might be used to in an imperative language. And it's been rare so far for errors to slip past the compiler.
+
+I did have to use trace statements a few times, but doing so was no different than in an imperative language.
+
+* Deployment
+
+As I'm using a single FastCGI program, deployment is pretty simple. I just rsync the statically-linked[8] binary to production and restart it.[9] This means that I don't need to have a Haskell compiler or any libraries on any web server. The downside is that the binary is currently 14MB and growing.
+
+I'm sure I'll have more to say about this once [[http://www.vocabulink.com/][www.vocabulink.com]] has more traffic and demands more sophisticated deployment.
+
+* Error Handling
+
+Contrary to what some people will tell you, you're still going to get errors in a purely functional program. The biggest source of mine up until now has been the database. I'm really looking forward to a higher-level relational interface that can catch these types of errors at compile time.
+
+One particularly frustrating problem you might encounter is mixing exceptions with your own monads. Exceptions are meant to be caught in the IO monad. This means that you can't catch them until you've unwrapped any extra layers you've added (such as a Reader).[10]
+
+For a web application, this isn't a deal breaker. The exception will be limited to the current request. Or you can catch all exceptions at the level they're thrown and use Maybe or Either monads (this is what Vocabulink does). However, it's something I'm looking forward to seeing the Haskell community improve upon.
+
+* Conclusions
+
+If you're curious about how developing with Haskell actually is, I encourage you to try it. There's only 1 way to find out what it's really like.
+
+Read through the [[http://jekor.com/vocabulink/vocabulink.pdf][literate source of Vocabulink]]. Most of it was written while I was still new to Haskell and so it might be easier to understand than some of the more theoretical papers out there.
+
+If, however, you just want to get your startup idea implemented ASAP and don't mind higher maintenance costs in the future, Haskell might not be for you. It's probably going to be a little bit more work to scale it to a large number of servers and you might not have a ready supply of Haskell programmers.
+
+Don't expect any miracles. Haskell is no silver bullet. But I do think you'll be pleasantly surprised with the results. If nothing else, you'll have expanded your mind in the process.
+
+Footnotes:
+
+[1]  I worked on the program for a few hours each night and on weekends. I estimate that I spent about 30 hours a week on it. I wasn't active every week (for instance, I stopped working on it for 2 months in the middle) so I suspect I've spent a total of about 500 hours on it so far.
+[2]  http://www.gnu.org/licenses/agpl-3.0.html
+[3]  I make no claims that my code is elegant or idiomatic. It is however real code that's running "in the wild".
+[4]  Since then, [[http://hackage.haskell.org/cgi-bin/hackage-scripts/package/gitit][gitit]] has been released. If you know of any others, please leave a comment.
+[5]  I've modified both the Network.FastCGI and Network.Memcache libraries to output in UTF-8 by default.
+[6]  I am aware of [[http://haskelldb.sourceforge.net/][HaskellDB]], but it does not seem mature enough for serious use. Perhaps someday soon...
+[7]  For a good introduction to formlets, see [[http://chrisdone.com/blog/html/2008-12-14-haskell-formlets-composable-web-form-construction-and-validation.html][this article]] in Chris Done's blog.
+[8]  I've been eagerly reading about dynamic linking support in the latest GHC 6.10 releases.
+[9]  I don't yet have a technique for graceful restarts.
+[10] I may be a bit behind in this as I know that the exception system has changed in GHC 6.10. However, I'm still using GHC 6.8.3.

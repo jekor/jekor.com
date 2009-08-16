@@ -234,7 +234,8 @@ and associated functionality by using the stdPage function.
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
 >         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes" ],
 >       boxer "About Me" [
->         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé" ] ] ]
+>         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé",
+>         anchor ! [href "mailto:jekor@jekor.com"] << "jekor@jekor.com" ] ] ]
 
 > boxer :: String -> [Html] -> Html
 > boxer t ls = thediv ! [theclass "boxer"] << [

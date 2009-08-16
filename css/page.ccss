@@ -431,3 +431,23 @@ table.muse-table:
   th, td:
     text-align: center
     padding: 0.33em
+
+#related:
+  background-color: $bar_and_box_background
+  .prev:
+    float: left
+  .next:
+    float: right
+  width: 90%
+  margin->
+    left: auto
+    right: auto
+
+#see-also:
+  text-align: center
+  margin->
+    top: 1.3em
+    bottom: 1.3em
+  h3:
+    font-size: 1em
+    font-weight: normal

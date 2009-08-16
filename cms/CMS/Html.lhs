@@ -131,9 +131,9 @@ generation time (now).
 > copyrightNotice = do
 >   year <- liftIO currentYear
 >   return $ paragraph ! [theclass "copyright"] <<
->     [  stringToHtml "© 2008–",
+>     [  stringToHtml "Copyright 2008–",
 >        stringToHtml ((show year) ++ " "),
->        anchor ! [href "http://jekor.com/"] << "Chris Forno" ]
+>        anchor ! [href "mailto:jekor@jekor.com"] << "Chris Forno" ]
 
 > copyrightStatement :: App String
 > copyrightStatement = do

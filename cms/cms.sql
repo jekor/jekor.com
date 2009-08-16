@@ -54,6 +54,11 @@ CREATE TABLE article_comments (
        root_comment INTEGER REFERENCES comment (comment_no) NOT NULL
 );
 
+CREATE TABLE article_see_also (
+       name TEXT NOT NULL REFERENCES article (name) PRIMARY KEY,
+       url TEXT NOT NULL
+);
+
 -- Because of the way that connectby() works, we must always have a root comment
 -- for each article. We won't display it, but it needs to be valid.
 CREATE RULE "add article" AS

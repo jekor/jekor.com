@@ -5,8 +5,11 @@ server {
   error_log     /var/log/nginx/jekor.com.error_log info;
   root  /home/chris/project/jekor.com;
 
-  location ~* \.(css|js|png|jpg|gif|pdf|gz)$ {
-    expires max;
+  location ~* \.(css|js|png|jpg|gif)$ {
+    expires 7d;
+  }
+
+  location ~* \.(pdf|gz)$ {
   }
 
   location ~* ^/(emacs|gressgraph|xtee)/ {
