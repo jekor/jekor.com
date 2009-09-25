@@ -18,7 +18,7 @@ I've spent the last <literal><del>7 months</del></literal> 10 months[1] creating
 
 In the margins I've included some quotes from my programming journal.
 
-I've also released the [[/vocabulink/vocabulink.tar.gz][source code]] for the website under the GNU Affero Public License.[3] It's roughly <literal><del>2,000</del></literal> 2,500 lines of Haskell, along with some SQL, Javascript, and CSS. The main program is written in a literate style and I've included the resulting <literal><a href="/vocabulink/vocabulink--2009-05-03.pdf"><del>75-page PDF</del></a></literal> [[/vocabulink/vocabulink.pdf][84-page PDF]]. You can read through it and draw your own conclusions.[4]
+I've also released the [[/vocabulink/vocabulink.tar.gz][source code]] for the website under the GNU Affero Public License.[3] It's roughly <literal><del>2,000</del></literal> 2,500 lines of Haskell, along with some SQL, Javascript, and CSS. The main program is written in a literate style and I've included the resulting <literal><a href="/vocabulink/vocabulink--2009-05-03.pdf"><del>75-page PDF</del></a></literal> [[/vocabulink/vocabulink.pdf][85-page PDF]]. You can read through it and draw your own conclusions.[4]
 
 * Features
 
