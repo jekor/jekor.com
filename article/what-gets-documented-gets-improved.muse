@@ -35,7 +35,7 @@ But in order to achieve revolutionary improvements in code, we need insight. We 
 
 * The 3 Layers of Program Documentation
 
-[[what-gets-documented-gets-improved/documentation-pyramid.png]]
+[[what-gets-documented-gets-improved.files/documentation-pyramid.png]]
 
 
      |          | comments     | literate text           | book           |

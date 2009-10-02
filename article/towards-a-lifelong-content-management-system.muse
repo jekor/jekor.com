@@ -55,7 +55,7 @@ There are a number of excellent publishing formats out there:
 
 Why are we reinventing them or presenting authors with a textarea for HTML input? What if one of these doesn't completely satisfy your needs. Why do you need to stick to 1 format for everything you write? Isn't the output format all that matters to your readers? If all of these tools can output what you need, why can't you use them all?
 
-[[towards-a-lifelong-content-management-system/publishing-component.png]]
+[[towards-a-lifelong-content-management-system.files/publishing-component.png]]
 
 ** HTTP Dispatcher
 
@@ -65,7 +65,7 @@ HTTP will be the protocol over which people retrieve content for the forseeable 
 
 Syndication and notification do not need to be a part of a web-based program. Why not dispatch requests from an HTTP Dispatcher directly to a separate system?
 
-[[towards-a-lifelong-content-management-system/syndication-component.png]]
+[[towards-a-lifelong-content-management-system.files/syndication-component.png]]
 
 Now we can see that other forms of content delivery, such as email updates, can be worked on independently of any type of web interface.
 
