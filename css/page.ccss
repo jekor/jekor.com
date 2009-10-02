@@ -451,3 +451,6 @@ table.muse-table:
   h3:
     font-size: 1em
     font-weight: normal
+
+sub, sup:
+  font-size: 66%;

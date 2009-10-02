@@ -23,6 +23,7 @@ functions. An example of this is |linkList|.
 >                           thestyle, src, width, height, value, name,
 >                           cols, rows, colspan, caption,
 >                           table, thead, tbody, tfoot, th, tr, td,
+>                           sub,
 >  {- Text.Formlets -}      runFormState, nothingIfNull,
 >                           check, ensure, ensures, checkM, ensureM,
 >                           plug,
@@ -59,7 +60,7 @@ footer. It also includes @page.css@.
 >   headerB  <- headerBar
 >   footerB  <- footerBar
 >   setHeader "Content-Type" "text/html; charset=utf-8"
->   output' True $ renderHtml $ header <<
+>   output' $ renderHtml $ header <<
 >     [  thetitle << t,
 >        concatHtml (map includeDep ([CSS "page"] ++ deps)),
 >        thelink ! [href "/rss", thetype "application/rss+xml", rel "alternate", title "Site-wide RSS Feed"] << noHtml,

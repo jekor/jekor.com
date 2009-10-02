@@ -48,6 +48,7 @@ Each of these modules will be described in its own section.
 > import CMS.Article
 > import CMS.DB
 > import CMS.CGI
+> import CMS.Gressgraph
 > import CMS.Html hiding (method, options)
 > import CMS.Utils
 
@@ -95,7 +96,8 @@ module, but the other CMS modules should be able to remain ignorant of that.}.
 > import Data.ConfigFile (readfile, emptyCP, ConfigParser, CPError, options)
 > import Data.List (find, intercalate, intersect)
 > import Data.List.Split (splitOn)
-> import Network.FastCGI (runFastCGIConcurrent')
+> import Network (PortID(..))
+> import Network.SCGI (runSCGIConcurrent')
 > import Network.URI (URI(..), unEscapeString)
 
 \section{Entry and Dispatch}
@@ -117,7 +119,7 @@ environment.
 > main = do  cp' <- getConfig
 >            case cp' of
 >              Left e    -> print e
->              Right cp  -> runFastCGIConcurrent' forkIO 2048 (do
+>              Right cp  -> runSCGIConcurrent' forkIO 2048 (PortNumber 10034) (do
 >                c <- liftIO connect
 >                handleErrors' c (runApp c cp handleRequest))
 
@@ -132,7 +134,7 @@ for them at load time and they can be safely read later with |forceEither $
 get|.
 
 > requiredConfigVars :: [String]
-> requiredConfigVars = ["dbpass", "articledir"]
+> requiredConfigVars = ["dbpass", "articledir", "graphdir"]
 
 This retrieves the config file and makes sure that it contains all of the
 required configuration parameters. This is so that we find out about errors
@@ -206,6 +208,21 @@ function for a @GET@ and to another for a @POST@.
 
 > dispatch "GET" ["rss"] = rssFeed
 
+\subsection{Gressgraph}
+
+Allow people to graph their iptables chains through the web. |graphFile| will
+generate an image file which we can then send to the client using X-Sendfile.
+
+> dispatch "GET" ["gressgraph","graph"] = do
+>   format <- getRequiredInput "format"
+>   chains <- getRequiredInput "chains"
+>   graphDir <- fromJust <$> getOption "graphdir"
+>   graphFile <- liftIO $ graphChains chains format graphDir
+>   setHeader "X-Sendfile" graphFile
+>   output' ""
+
+\subsection{Everything Else}
+
 > dispatch "GET" path = output404 path
 
 For now we are read-only, baby.
@@ -232,7 +249,9 @@ and associated functionality by using the stdPage function.
 >       boxer "Programs" [
 >         anchor ! [href "/emacs/dot-emacs.pdf"] << "My Literate .emacs",
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
->         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes" ],
+>         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes",
+>         anchor ! [href "/log2rotate/"] << [
+>           stringToHtml "log", sub << "2", stringToHtml "rotate: exponential backup rotation"] ],
 >       boxer "About Me" [
 >         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé",
 >         anchor ! [href "mailto:jekor@jekor.com"] << "jekor@jekor.com" ] ] ]
@@ -248,5 +267,6 @@ and associated functionality by using the stdPage function.
 %include CMS/DB.lhs
 %include CMS/Html.lhs
 %include CMS/Article.lhs
+%include CMS/Gressgraph.lhs
 
 \end{document}

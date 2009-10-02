@@ -12,28 +12,12 @@ server {
   location ~* \.(pdf|gz)$ {
   }
 
-  location ~* ^/(emacs|gressgraph|xtee)/ {
+  location ~* ^/(emacs|gressgraph|xtee|log2rotate)/ {
   }
 
   location / {
     include     /etc/nginx/fastcgi_params;
-    if ($request_method = POST) {
-      fastcgi_pass      127.0.0.1:10034;
-      break;
-    }
-    if ($is_args) {
-      fastcgi_pass      127.0.0.1:10034;
-      break;
-    }
-    default_type      "text/html; charset=utf-8";
-    set $memcached_key "jekor.com:$request_uri";
-    memcached_pass    127.0.0.1:11211;
-    error_page        404 = /fastcgi;
-  }
-
-  location /fastcgi {
-    include     /etc/nginx/fastcgi_params;
-    fastcgi_pass        127.0.0.1:10034;
+    fastcgi_pass     127.0.0.1:100034;
   }
 }
 

@@ -22,8 +22,6 @@ It turns out that using our program gives us some additional consistency
 > import Data.List (deleteBy, findIndices)
 > import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
-> import qualified Network.Memcache.Protocol as Memcached
-> import qualified Network.Memcache as Memcache
 > import Network.URI (URI(..), parseURI)
 > import qualified System.IO.UTF8 as IO.UTF8
 > import Text.RSS
@@ -66,7 +64,7 @@ advantages of the filesystem such as revision control.
 > articleBody :: Article -> App (Maybe Html)
 > articleBody a = do
 >   dir   <- articleDir
->   body  <- liftIO $ try $ IO.UTF8.readFile $ dir ++ "/" ++ articleName a ++ "." ++ articleFormat a
+>   body  <- liftIO (try (IO.UTF8.readFile $ dir ++ "/" ++ articleName a ++ "." ++ articleFormat a) :: IO (Either SomeException String))
 >   return $ case body of
 >     Left _   -> Nothing
 >     Right b  -> Just $ primHtml b
@@ -141,18 +139,19 @@ to them.
 >                             \WHERE name = ?" [toSql name']
 >           case r of
 >             Just r'  -> do
+>               let r'' = fromSql r' :: String
 >               comments <- queryTuples'
 >                 "SELECT c.comment_no, t.level, c.name, c.email, c.url, \
 >                        \c.time, c.body \
 >                 \FROM comment c \
 >                 \INNER JOIN connectby('comment', 'comment_no', 'parent_no', ?, 0) \
->                   \AS t(comment_no int, parent_no int, level int) USING (comment_no)" [r']
->               moreComments <- queryAttribute'
->                 "SELECT url FROM article_see_also \
->                 \WHERE name = ?" [toSql name']
->               case (comments, moreComments) of
->                 (Just cs, Just mcs)  -> do
->                   let moarComments = map (\x -> anchor ! [href x] << x) (map fromSql mcs)
+>                   \AS t(comment_no int, parent_no int, level int) USING (comment_no)" [toSql r'']
+> --              moreComments <- queryAttribute'
+> --                "SELECT url FROM article_see_also \
+> --                \WHERE name = ?" [toSql name']
+>               case (comments) of --, moreComments) of
+>                 (Just cs)  -> do
+> --                  let moarComments = map (\x -> anchor ! [href x] << x) (map fromSql mcs)
 >                   -- Discard the root comment.
 >                   commentsHtml <- mapM displayCommentWithReply $ map commentFromValues $ safeTail cs
 >                   (_, xhtml) <- runForm' $ commentForm $ fromSql r'
@@ -174,14 +173,14 @@ to them.
 >                          paragraph ! [thestyle "clear: both; text-align: center"] << commentLink,
 >                          thediv ! [identifier "comments", theclass "comments"] << [
 >                            concatHtml commentsHtml,
->                            comment' ],
->                          thediv ! [identifier "related"] << [
->                            thespan ! [theclass "prev"] << [stringToHtml "Prev: ", prevArticle],
->                            thespan ! [theclass "next"] << [stringToHtml "Next: ", nextArticle],
->                            paragraph ! [thestyle "clear: both"] << noHtml ],
->                          thediv ! [identifier "see-also"] << [
->                            length moarComments == 0 ? noHtml $ h3 << "See Also",
->                            unordList moarComments ] ]
+>                            comment' ] ]
+> --                         thediv ! [identifier "related"] << [
+> --                           thespan ! [theclass "prev"] << [stringToHtml "Prev: ", prevArticle],
+> --                           thespan ! [theclass "next"] << [stringToHtml "Next: ", nextArticle],
+> --                           paragraph ! [thestyle "clear: both"] << noHtml ],
+> --                         thediv ! [identifier "see-also"] << [
+> --                           length moarComments == 0 ? noHtml $ h3 << "See Also",
+> --                           unordList moarComments ] ]
 >                 _                    -> error "Error retrieving comments."
 >             Nothing  -> output404 ["article",name']
 
@@ -242,7 +241,7 @@ directly on an object).
 
 > commentBodyForm :: AppForm String
 > commentBodyForm = plug (tabularInput "Comment") $
->   F.textarea Nothing `check` ensures
+>   F.textarea Nothing Nothing Nothing `check` ensures
 >     [  ((> 0)       . length, "Comment must not be empty."),
 >        ((<= 10000)  . length, "Comment must be 10,000 characters or shorter.") ]
 
@@ -337,12 +336,6 @@ This returns the new comment number.
 >         Just c   -> do
 >           c' <- asks appDB
 >           liftIO $ commit c'
->           liftIO $ do  memcache <- Memcached.connect "127.0.0.1" 11211
->                        -- Our cache isn't that big, so the easiest thing to
->                        -- do is flush the whole thing rather than try to
->                        -- figure out which article this comment is for.
->                        Memcache.flush memcache
->                        Memcached.disconnect memcache
 >           comment' <- displayCommentWithReply $ commentFromValues c
 >           outputJSON [  ("html", showHtmlFragment comment'),
 >                         ("status", "accepted") ]
@@ -385,7 +378,7 @@ For now, our site-wide RSS feed just contains articles.
 >   let  lastUpdate = case articles of
 >                       Nothing  -> []
 >                       Just as  -> [LastBuildDate $ convert $ articleTime $ head as]
->   output' True $ showXML $ rssToXML $
+>   output' $ showXML $ rssToXML $
 >     RSS  "jekor.com" (fromJust $ parseURI "http://jekor.com/")
 >          "Programming Philosophy (site-wide feed)"
 >          ([  Language "en-us",

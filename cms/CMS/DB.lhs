@@ -1,18 +1,36 @@
+% Copyright 2008, 2009 Chris Forno
+
+% This file is part of Vocabulink.
+
+% Vocabulink is free software: you can redistribute it and/or modify it under
+% the terms of the GNU Affero General Public License as published by the Free
+% Software Foundation, either version 3 of the License, or (at your option) any
+% later version.
+
+% Vocabulink is distributed in the hope that it will be useful, but WITHOUT ANY
+% WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+% A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+% details.
+
+% You should have received a copy of the GNU Affero General Public License
+% along with Vocabulink. If not, see <http://www.gnu.org/licenses/>.
+
 \section{Database}
 
-Vocabulink makes heavy use of a PostgreSQL. We use @Database.HDBC@ for
+Vocabulink makes heavy use of PostgreSQL. We use @Database.HDBC@ for
 interfacing with it.
 
 This module is possibly the most dangerous and error-prone we have. Because we
 interface with the database via strings, we can't do type checking. We're also
-dealing with constantly-changing state.
+dealing with ever-changing state.
 
-> module CMS.DB (  queryTuple, queryValue, queryAttribute,
->                         quickStmt, insertNo, quickInsertNo,
->                         catchSqlD, catchSqlE, logMsg, logException, connect,
->  {- Database.HDBC -}    SqlValue(..), toSql, fromSql, iToSql,
->                         withTransaction, throwDyn, quickQuery, quickQuery',
->                         IConnection(..), execute, catchSql,
+> module CMS.DB (                  queryTuple, queryValue, queryAttribute,
+>                                  quickStmt, insertNo, quickInsertNo,
+>                                  catchSqlD, catchSqlE, logMsg, logException,
+>                                  connect,
+>  {- Database.HDBC -}             SqlValue(..), toSql, fromSql, iToSql,
+>                                  withTransaction, quickQuery, quickQuery',
+>                                  IConnection(..), execute, catchSql,
 >  {- Database.HDBC.PostgreSQL -}  Connection) where
 
 We need to keep this module independent of most other modules as most modules
@@ -20,12 +38,13 @@ need to utilize the database in some way.
 
 > import CMS.Utils
 
-> import Control.Exception (Exception(..), IOException, bracket, throwDyn)
+> import Control.Exception (bracket)
 > import Database.HDBC
 > import Database.HDBC.PostgreSQL (connectPostgreSQL, Connection)
-> import System.IO.Error (isUserError, ioeGetErrorString)
 
-Here's how we establish a connection to the database.
+Here's how we establish a connection to the database. I'd like to have the
+database password stored in the configuration file, but it would make the code
+far more complex.
 
 > connect :: IO Connection
 > connect = connectPostgreSQL "host=localhost \
@@ -39,13 +58,13 @@ HDBC provides a pretty basic interface. If we relied on it, we'd be doing a lot
 of housekeeping and repetitive work throughout the code. Here are some
 higher-level interfaces to the database.
 
-Sometimes you want just the first tuple of a query result. If the query returns
+Sometimes we want just the first tuple of a query result. If the query returns
 multiple tuples, all but the first will be silently discarded.
 
 > queryTuple :: IConnection conn => conn -> String -> [SqlValue] -> IO [SqlValue]
 > queryTuple c sql vs = safeHead [] `liftM` quickQuery' c sql vs
 
-Sometimes you just want to retrieve a single attribute from a single tuple.
+Sometimes we just want to retrieve a single attribute from a single tuple.
 This will return either Just the value you were expecting or Nothing.
 
 > queryValue :: IConnection conn => conn -> String -> [SqlValue] -> IO (Maybe SqlValue)
@@ -56,9 +75,9 @@ This will return either Just the value you were expecting or Nothing.
 >     [x]        -> Just x
 >     _          -> Nothing
 
-And finally, sometimes you just want to retrieve a single attribute for
+And finally, sometimes we just want to retrieve a single attribute for
 multiple tuples. This assumes that the attribute you want is the first one
-SELECTed.
+@SELECT@ed.
 
 > queryAttribute :: IConnection conn => conn -> String -> [SqlValue] -> IO [SqlValue]
 > queryAttribute c sql vs = map head `liftM` quickQuery' c sql vs
@@ -71,7 +90,7 @@ statement.
 
 A common task is to insert a tuple and get its sequence number. This should
 only be used for inserting into tables with a sequence-based primary key
-(e.g. a SERIAL attribute).
+(e.g. the @SERIAL@ type).
 
 > insertNo ::  IConnection conn =>
 >              conn -> String -> [SqlValue] -> String -> IO (Maybe Integer)
@@ -104,63 +123,55 @@ The most common cause for triggering a database exception is through malformed
 SQL, so we probably find most of these during early testing.
 
 > catchSqlE :: IO a -> String -> IO a
-> catchSqlE sql msg = catchSqlD sql (error msg)
+> catchSqlE sql = catchSqlD sql . error
 
 Instead of erroring out, it might make more sense to return a default value.
 When we don't want the entire request crashing, this is a better alternative to
 |catchSqlE|.
 
-This is a little bit wasteful, but we establish a new database connection. We
-do this so that we don't have to pass around a database connection. But also,
-we may have been in a transaction or otherwise ruined our main connection for
-logging. Establishing an extra connection shouldn't be too much extra trouble:
-we've already encountered an error condition.
+This is a little bit wasteful, but if we do catch an exception we establish a
+new database connection. We do this so that we don't have to pass around a
+database connection. But also, we may have been in a transaction or otherwise
+ruined our main connection and need a new one for logging the error message.
+Establishing an extra connection shouldn't be too much extra trouble: we've
+already encountered an error condition, how much worse can it get?
 
 > catchSqlD :: IO a -> a -> IO a
-> catchSqlD sql d = sql `catchSql` (\e -> bracket (connect)
->                                                 (disconnect)
+> catchSqlD sql d = sql `catchSql` (\e -> bracket connect
+>                                                 disconnect
 >                                                 (\c -> do  logSqlError c e
 >                                                            return d))
 
 It's useful to have all errors logged in 1 location: the database.
 
-|logMsg| takes a log type name ("SQL exception", "404", etc.) and a descriptive
+|logMsg| takes a log type name (``SQL exception'', ``404'', etc.) and a descriptive
 message. The type and message is then logged to the database along with a
-timestamp. If the message type is not found, it defaults to 'unknown'.
+timestamp. If the message type is not found, it defaults to ``unknown''.
 
 > logMsg :: IConnection conn => conn -> String -> String -> IO (String)
 > logMsg c t s = do
 >   quickStmt c  "INSERT INTO log (type, message) \
 >                \VALUES ((SELECT name FROM log_type WHERE name = ?), ?)"
 >                [toSql t, toSql s]
->     `catchSqlD` ()
 >   return s
 
 Exceptions come in different shapes and sizes, and we'd like to have log
-information about them when we encounter them. Or, we may want to ignore
+information about them when we encounter them. Or, we might want to ignore
 certain exceptions.
 
-> logException :: IConnection conn => conn -> Exception -> IO (String)
-> logException c e =
->   case sqlExceptions e of
->     Nothing  -> case e of
->                   (ErrorCall msg)   -> logMsg c "exception" msg
->                   (IOException ie)  -> logMsg c "IO exception" $
->                                          readableIOException ie
->                   e'                -> logMsg c "exception" (show e')
->     Just se  -> do  logSqlError c se
->                     return "Database Error"
+% > logException :: (IConnection conn, Exception e) => conn -> e -> IO (String)
+% > logException c e =
+% >   case cast e of
+% >     Just (SqlError _ _ m)  -> do  logMsg c "SQL error" m
+% >                                   return "Database Error"
+% >     _                      -> logMsg c "exception" (show e)
 
-When we encounter an IO exception, we'd like to pull the information out of it
-so that we can make sense of it when going through the logs.
-
-> readableIOException :: IOException -> String
-> readableIOException ioe =
->   isUserError ioe ? ioeGetErrorString ioe $ show ioe
+> logException :: (IConnection conn) => conn -> SomeException -> IO (String)
+> logException c = logMsg c "exception" . show
 
 |logSqlError| is used by |logException|, |catchSqlD|, and |catchSqlE|. It's
 special because it's potentially the most common type of exception we'll
 encounter, and the one we most want to hear about.
 
 > logSqlError :: IConnection conn => conn -> SqlError -> IO (String)
-> logSqlError c se = logMsg c "SQL error" (init (seErrorMsg se))
+> logSqlError c = logMsg c "SQL error" . init . seErrorMsg

@@ -1,15 +1,15 @@
-# Vocabulink CGI
+# jekor.com CMS CGI
 
-fcgi := cms.fcgi
+cgi := cms.cgi
 
 lhss := $(shell find . -name "*.lhs" -print)
 
-all : $(fcgi)
+all : $(cgi)
 
 doc : cms.pdf
 
-cms.fcgi : $(lhss)
-	ghc -Wall -fglasgow-exts -threaded -package fastcgi --make -o $(fcgi) $^
+cms.cgi : $(lhss)
+	ghc -Wall -fglasgow-exts -threaded --make -o $(cgi) $^
 
 cms.pdf : CMS.tex
 	pdflatex $<
@@ -17,20 +17,16 @@ cms.pdf : CMS.tex
 CMS.tex : $(lhss)
 	lhs2TeX CMS.lhs > $@
 
-install : cms.fcgi
-	install -o root -g root $(fcgi) /usr/local/bin
-# The following is now handled by an init script.
-#	-killall $(fcgi)
-#	spawn-fcgi -f "/usr/local/bin/$(fcgi) 2>> /tmp/cms.error.log" -p 10034 -u lighttpd -g lighttpd
+install : cms.cgi
+	mv ~/.cabal/bin/cms.cgi ~/.cabal/bin/cms.cgi.backup
+	cp cms.cgi ~/.cabal/bin/cms.cgi
+	-killall $(cgi)
 
 tags : $(lhss)
 	hasktags -e $^
 
 clean :
 	find . -iregex ".*\.\(o\|hi\|o-boot\|hi-boot\)" -print0 | xargs -0 rm
-
-test :
-	ghci -fglasgow-exts CMS.lhs
 
 metrics : $(lhss)
 	@echo -e -n "\tSLOC: "

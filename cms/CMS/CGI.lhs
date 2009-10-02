@@ -13,11 +13,11 @@ functions. This allows other modules to just import Vocabulink.CGI and allows
 us the option of overriding its functions in the future (which we do already
 with |readInput|). This is a common pattern in other modules.
 
-> module CMS.CGI (  getInput, getRequiredInput, getInputDefault,
+> module CMS.CGI (         getInput, getRequiredInput, getInputDefault,
 >                          readInput, readRequiredInput, readInputDefault,
 >                          getInputs, handleErrors', referrerOrCMS,
 >                          urlify, outputUnauthorized, outputText, outputJSON,
->                          output',
+>                          output', tryCGI',
 >  {- Network.FastCGI -}   getInputFPS, getInputFilename,
 >                          MonadCGI, CGIResult, requestURI, requestMethod,
 >                          getVar, setHeader, output, redirect, remoteAddr,
@@ -29,12 +29,14 @@ with |readInput|). This is a common pattern in other modules.
 > import CMS.DB
 > import CMS.Utils
 
-> import Control.Exception (Exception(..))
+> import Control.Exception (Exception(..), try)
+> import Control.Monad.Reader (ReaderT(..))
+> import Control.Monad.Writer (WriterT(..))
+> import Data.Monoid (mempty)
 > import Data.ByteString.Lazy.UTF8 (fromString)
 > import Data.Char (toLower, isAlphaNum)
-> import qualified Network.Memcache.Protocol as Memcached
-> import qualified Network.Memcache as Memcache
-> import Network.URI (uriPath, uriQuery)
+> import Network.CGI.Monad (CGIT(..))
+> import Network.URI (uriPath)
 > import Text.JSON (JSON, encode, toJSObject)
 
 We're going to hide some Network.CGI functions so that we can override them
@@ -54,9 +56,9 @@ went wrong.
  we'll close the database handle and return the CGI result.
 
 > handleErrors' :: IConnection conn => conn -> CGI CGIResult -> CGI CGIResult
-> handleErrors' c a =  catchCGI (do  r <- a
->                                    liftIO $ disconnect c
->                                    return r)
+> handleErrors' c a =  catchCGI' (do  r <- a
+>                                     liftIO $ disconnect c
+>                                     return r)
 >                      (outputException' c)
 
 Network.CGI provides |outputException| as a basic default error handler. This
@@ -71,7 +73,7 @@ in the CGI monad (and the thrtead). If we didn't close it, we'd probably start
 accumulating a pile of unused database handles.
 
 > outputException' ::  (MonadCGI m, MonadIO m, IConnection conn) =>
->                      conn -> Exception -> m CGIResult
+>                      conn -> SomeException -> m CGIResult
 > outputException' c e = do
 >   s <- liftIO $ logException c e
 >   liftIO $ disconnect c
@@ -90,23 +92,14 @@ memcached (which will then be used by nginx for subsequent requests).
 
 TODO: Exception handling.
 
-> output' :: (MonadCGI m, MonadIO m) => Bool -> String -> m CGIResult
-> output' cache s = do
->   uri     <- requestURI
->   method  <- requestMethod
->   liftIO $ case (method, cache) of
->     ("GET", True)  -> do  memcache <- Memcached.connect "127.0.0.1" 11211
->                           Memcache.set memcache  ("jekor.com:" ++ uriPath uri ++ uriQuery uri)
->                                                  (encodeString s)
->                           Memcached.disconnect memcache
->     _      -> return ()
->   return $ CGIOutput $ fromString s
+> output' :: (MonadCGI m, MonadIO m) => String -> m CGIResult
+> output' s = return $ CGIOutput $ fromString s
 
 Also, we do not always output HTML. Sometimes we output JSON or HTML fragments.
 
 > outputText :: (MonadCGI m, MonadIO m) => String -> m CGIResult
 > outputText s =  setHeader "Content-Type" "text/plain; charset=utf-8" >>
->                 output' False s
+>                 output' s
 
 Output as JSON an associative list.
 
@@ -179,3 +172,13 @@ new characters.
 
 > urlify :: String -> String
 > urlify = map toLower . filter (\e -> isAlphaNum e || (e == '-')) . translate [(' ', '-')]
+
+\subsection{New Extensible Exceptions}
+
+> catchCGI' :: Exception e => CGI a -> (e -> CGI a) -> CGI a
+> catchCGI' c h = tryCGI' c >>= either h return
+
+> tryCGI' :: Exception e => CGI a -> CGI (Either e a)
+> tryCGI' (CGIT c) = CGIT (ReaderT (WriterT . f . runWriterT . runReaderT c ))
+>     where
+>       f = liftM (either (\ex -> (Left ex,mempty)) (first Right)) . try

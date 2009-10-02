@@ -5,9 +5,12 @@ exist in any libraries I know of.
 
 > module CMS.Utils (                if', (?), safeHead, currentDay, currentYear,
 >                                   basename, translate, formatTime', (<$$>),
+>                                   convertLineEndings,
 >  {- Codec.Binary.UTF8.String -}   encodeString, decodeString,
 >  {- Control.Applicative -}        pure, (<$>), (<*>),
 >  {- Control.Applicative.Error -}  Failing(..), maybeRead,
+>  {- Control.Arrow -}              first, second,
+>  {- Control.Exception -}          SomeException,
 >  {- Control.Monad -}              liftM,
 >  {- Control.Monad.Trans -}        liftIO, MonadIO,
 >  {- Data.Char -}                  toLower,
@@ -16,6 +19,7 @@ exist in any libraries I know of.
 >  {- Data.Time.Clock -}            UTCTime,
 >  {- Data.Time.Format -}           formatTime,
 >  {- Data.Time.LocalTime -}        ZonedTime,
+>  {- System.FilePath -}            FilePath, (</>), (<.>), replaceExtension,
 >  {- System.Locale -}              defaultTimeLocale, rfc822DateFormat) where
 
 We make extensive use of the |liftM| and the Maybe monad.
@@ -23,15 +27,19 @@ We make extensive use of the |liftM| and the Maybe monad.
 > import Codec.Binary.UTF8.String (encodeString, decodeString)
 > import Control.Applicative (pure, (<$>), (<*>))
 > import Control.Applicative.Error (Failing(..), maybeRead)
+> import Control.Arrow (first, second)
+> import Control.Exception (SomeException)
 > import Control.Monad (liftM)
 > import Control.Monad.Trans (liftIO, MonadIO)
 > import Data.Char (toLower)
+> import Data.List.Utils (join) -- MissingH
 > import Data.Maybe (maybe, fromMaybe, fromJust, isJust, isNothing, catMaybes)
 > import Data.Time.Calendar (Day, toGregorian)
 > import Data.Time.Clock (getCurrentTime, UTCTime)
 > import Data.Time.Format (formatTime, FormatTime)
 > import Data.Time.LocalTime (  getCurrentTimeZone, utcToLocalTime,
 >                               LocalTime(..), ZonedTime)
+> import System.FilePath (FilePath, (</>), (<.>), replaceExtension)
 > import System.Locale (defaultTimeLocale, rfc822DateFormat)
 
 It's often useful to have the compactness of the traditional tertiary operator
@@ -91,3 +99,21 @@ much sense as 2 |<$>|s.
 
 > (<$$>) :: (Monad m1, Monad m) => (a -> r) -> m (m1 a) -> m (m1 r)
 > (<$$>) = liftM . liftM
+
+> convertLineEndings :: String -> String
+> convertLineEndings = join "\n" . splitLines
+
+This comes from Real World Haskell.
+
+> splitLines :: String -> [String]
+> splitLines []  = []
+> splitLines cs  =
+>   let (pre, suf) = break isLineTerminator cs in
+>   pre : case suf of
+>           ('\r':'\n':rest)  -> splitLines rest
+>           ('\r':rest)       -> splitLines rest
+>           ('\n':rest)       -> splitLines rest
+>           _                 -> []
+
+> isLineTerminator :: Char -> Bool
+> isLineTerminator c = c == '\r' || c == '\n'

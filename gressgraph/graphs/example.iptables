@@ -1,53 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <meta name="description" content="gressgraph - visualize your iptables firewall. gressgraph is a small literate Haskell program that uses Graphviz to produce a visual graph of your iptables settings.">
-  <meta name="keywords" content="gressgraph, iptables, firewall, graph, graphviz, haskell">
-  <title>gressgraph - visualize your iptables firewall</title>
-  <style type="text/css">
-    body {
-      background: url(gressgraph-header.png) top left no-repeat;
-      background-color: #808080;
-    }
-    #nav {
-      padding: 0.5em 0;
-      background-color: #808080;
-    }
-    #nav li {
-      display: inline;
-      margin-right: 1em;
-    }
-    #footer {
-      font-size: smaller;
-      text-align: center;
-      margin-top: 2em;
-    }
-  </style>
-</head>
-<body>
-  <h1>gressgraph</h1>
-  <p style="margin-left: 2em"><i>Visualize your firewall.</i></p>
-
-  <ul id="nav">
-    <li><a href="gressgraph-0.2.tar.gz">Download</a> (source, 168KB)</li>
-    <li><a href="gressgraph.pdf">Documentation</a> (PDF, 9 pages)</li>
-    <li><a href="gressgraph-example.png">Screenshot</a> (PNG, 1000x964)</li>
-  </ul>
-
-  <p style="clear: left">gressgraph produces a graph of your iptables ruleset using <a href="http://graphviz.org/">Graphviz</a>. You can use the graph to:
-    <ul>
-      <li>Look for vulnerabilities or redundancies.</li>
-      <li>Get a "feel" for a network.</li>
-      <li>Showcase your firewall.</li>
-    </ul>
-  </p>
-
-  <h2>Try It Out</h2>
-
-  <p>Enter the output of <code>iptables -L -vx</code> here.</p>
-
-  <form action="graph" method="get" style="text-align: center">
-    <textarea name="chains" rows="24" cols="120">Chain INPUT (policy DROP 1226127 packets, 148780906 bytes)
+Chain INPUT (policy DROP 1226127 packets, 148780906 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
    57225  8133562 DROP       all  --  any    any     anywhere             anywhere            state INVALID 
    64147 24178835 DROP       all  --  eth0   any     10.0.0.0/8           anywhere            
@@ -83,36 +34,4 @@ Chain FORWARD (policy DROP 209896 packets, 11331181 bytes)
 Chain OUTPUT (policy DROP 3466 packets, 161804 bytes)
     pkts      bytes target     prot opt in     out     source               destination         
 274047964 141843115914 ACCEPT     all  --  any    any     anywhere             anywhere            state NEW,RELATED,ESTABLISHED 
-       0        0 ACCEPT     all  --  any    lo      anywhere             anywhere            </textarea><br/><br/>
-    <label for="format">Format: </label>
-    <select name="format">
-      <option selected value="png">PNG</option>
-      <option value="svg">SVG</option>
-    </select>
-    <input type="submit" value="Graph It"/>
-  </form>
-
-  <h2>About</h2>
-
-  <p>I've deliberately kept the program simple. It has no commandline options. To change the look of the output just modify the source (don't worry, it's currently only 205 lines of <a href="http://en.wikipedia.org/wiki/Literate_programming">literate</a> <a href="http://haskell.org/">Haskell</a>).</p>
-
-  <p>I've also only tested it on my own simple network. I'd appreciate hearing about how it works for you. Feel free to include your iptables output.</p>
-
-  <h2>Latest Source</h2>
-
-  <p>You can checkout a copy of the latest code with:</p>
-
-  <p style="margin-left: 2em"><code><a href="http://www.darcs.net/">darcs</a> get http://jekor.com/gressgraph/</code></p>
-
-  <p id="footer">Copyright 2008 <a href="mailto:jekor@jekor.com">Chris Forno</a></p>
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-73938-3");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-</body>
-</html>
+       0        0 ACCEPT     all  --  any    lo      anywhere             anywhere            
