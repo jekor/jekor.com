@@ -247,12 +247,12 @@ and associated functionality by using the stdPage function.
 >       image ! [src "/image/word-cloud.png", alt "word (tag) cloud"] ],
 >     thediv ! [theclass "column", identifier "right"] << [
 >       boxer "Programs" [
->         anchor ! [href "/emacs/dot-emacs.pdf"] << "My Literate .emacs",
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
->         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes",
+>         anchor ! [href "/chartviz/"] << "Chartviz: a javascript charting library",
 >         anchor ! [href "/log2rotate/"] << [
 >           stringToHtml "log", sub << "2", stringToHtml "rotate: exponential backup rotation"],
->         anchor ! [href "/chartviz/"] << "Chartviz: a javascript charting library" ],
+>         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes",
+>         anchor ! [href "/emacs/dot-emacs.pdf"] << "My Literate .emacs" ],
 >       boxer "About Me" [
 >         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé",
 >         anchor ! [href "mailto:jekor@jekor.com"] << "jekor@jekor.com" ] ] ]
