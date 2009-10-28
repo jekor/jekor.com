@@ -32,6 +32,10 @@
     #chart-1, #chart-2 {
       width: 800px;
     }
+    noscript {
+      padding: 0.2em;
+      background-color: pink;
+    }
   </style>
 </head>
 <body>
@@ -47,7 +51,6 @@
   <p>To see how to use chartviz, view the source of this page. There is minimal documentation in the form of comments in the source file.</p>
 
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-  <noscript>Javascript is required to see the chartviz demos.</noscript>
 
   <h2>Simple Time Series</h2>
 
@@ -57,6 +60,7 @@
 
   <div id="chart-2" class="chart"></div>
 
+  <noscript>Javascript is required to see the chartviz demos.</noscript>
   <script type="text/javascript">
     $(document).ready(function () {
       chart1();
