@@ -251,7 +251,8 @@ and associated functionality by using the stdPage function.
 >         anchor ! [href "/gressgraph/"] << "Gressgraph: Visualize Your Firewall",
 >         anchor ! [href "/xtee/"] << "Xtee: Fun with Pipes",
 >         anchor ! [href "/log2rotate/"] << [
->           stringToHtml "log", sub << "2", stringToHtml "rotate: exponential backup rotation"] ],
+>           stringToHtml "log", sub << "2", stringToHtml "rotate: exponential backup rotation"],
+>         anchor ! [href "/chartviz/"] << "Chartviz: a javascript charting library" ],
 >       boxer "About Me" [
 >         anchor ! [href "/resume-Chris-Forno.pdf"] << "My Résumé",
 >         anchor ! [href "mailto:jekor@jekor.com"] << "jekor@jekor.com" ] ] ]
