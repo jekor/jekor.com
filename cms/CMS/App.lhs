@@ -1,24 +1,15 @@
 \section{The App Monad}
 \label{App}
 
-When I wrote the first version of Vocabulink, many functions passed around a
-database connection. I now understand monads a little bit more, and it's easier
-to store some information within an ``App'' monad. This reduces our function
-signatures a little bit.
-
-> module CMS.App (             App, AppEnv(..), AppT, runApp, logApp, getOption,
+> module CMS.App (             App, AppEnv(..), AppT, runApp, getOption,
 >                              output404, reversibleRedirect,
->                              queryTuple', queryValue', queryAttribute',
->                              queryTuples', quickInsertNo', runStmt', quickStmt',
->                              withTransaction', run',
+>                              queryTuple', queryTuples', execute',
 >  {- Control.Monad.Reader -}  asks) where
 
 > import CMS.CGI
-> import CMS.DB
 > import CMS.Utils
 
-> import Control.Applicative
-> import Control.Exception (try)
+> import Control.Applicative (Applicative)
 > import Control.Monad (ap)
 > import Control.Monad.Error (runErrorT)
 > import Control.Monad.Reader (ReaderT(..), MonadReader, asks)
@@ -26,11 +17,12 @@ signatures a little bit.
 
 > import Data.ConfigFile (ConfigParser, get)
 > import Data.List (intercalate)
+> import Language.Haskell.TH (Q, Exp)
 > import Network.CGI.Monad (MonadCGI(..))
-> import Network.FastCGI (CGI, CGIT, outputNotFound)
+> import Network.CGI (CGI, CGIT, outputNotFound)
 > import Network.URI (escapeURIString, isUnescapedInURI)
 
-> data AppEnv = AppEnv {  appDB          :: Connection,
+> data AppEnv = AppEnv {  appDB          :: Handle,
 >                         appCP          :: ConfigParser }
 
 The App monad is a combination of the CGI and Reader monads.
@@ -40,13 +32,16 @@ The App monad is a combination of the CGI and Reader monads.
 
 ...whose CGI monad uses the IO monad.
 
-> type App a = AppT IO a
+> type App = AppT IO
 
-> instance Applicative (AppT IO) where
+We need to make the App monad an Applicative Functor so that it will work with
+formlets.
+
+> instance Applicative App where
 >   pure = return
 >   (<*>) = ap
 
-> instance Functor (AppT IO) where
+> instance Functor App where
 >   fmap = liftM
 
 To make the App monad an instance of MonadCGI, we need to define basic CGI
@@ -54,27 +49,18 @@ functions. CGI is relatively simple and its functionality can be defined on top
 of just an environment getter and a function for adding headers. We reuse the
 existing methods.
 
-> instance MonadCGI (AppT IO) where
->   cgiAddHeader n v = AppT $ lift $ cgiAddHeader n v
->   cgiGet x = AppT $ lift $ cgiGet x
+> instance MonadCGI App where
+>   cgiAddHeader n = AppT . lift . cgiAddHeader n
+>   cgiGet = AppT . lift . cgiGet
 
 |runApp| does the job of creating the Reader environment and returning the
 CGIResult from within the App monad to the CGI monad.
 
-> runApp :: Connection -> ConfigParser -> App CGIResult -> CGI CGIResult
-> runApp c cp (AppT a) = do
->   res <- runReaderT a $ AppEnv {  appDB          = c,
+> runApp :: Handle -> ConfigParser -> App CGIResult -> CGI CGIResult
+> runApp h cp (AppT a) = do
+>   res <- runReaderT a $ AppEnv {  appDB          = h,
 >                                   appCP          = cp }
 >   return res
-
-At some point it's going to be essential to have all errors and notices logged
-in 1 location. For now, the profusion of monads and exception handlers makes
-this difficult.
-
-> logApp :: String -> String -> App (String)
-> logApp t s = do
->   c <- asks appDB
->   liftIO $ logMsg c t s
 
 \subsection{Convenience Functions}
 
@@ -96,8 +82,7 @@ opportunity with the site. This takes a list of Strings that are stored in the
 log. It outputs to the user the request URI.
 
 > output404 :: [String] -> App CGIResult
-> output404 s = do  logApp "404" (show s)
->                   outputNotFound $ intercalate "/" s
+> output404 s = outputNotFound $ intercalate "/" s
 
 \subsubsection{Database}
 
@@ -114,63 +99,21 @@ anyway (make sure that a list of the expected size is returned, etc), so the
 extra Maybe wrapper shouldn't be much extra trouble. In fact, in some cases
 it's much easier than manually wrapping the query with |catchSql|.
 
-> queryTuple' :: String -> [SqlValue] -> App (Maybe [SqlValue])
-> queryTuple' sql vs = do
->   c <- asks appDB
->   liftIO $ (queryTuple c sql vs >>= return . Just) `catchSqlD` Nothing
+-- Here are some convenience functions for working with the database in the App
+-- monad.
 
-> queryTuples' :: String -> [SqlValue] -> App (Maybe [[SqlValue]])
-> queryTuples' sql vs = do
->   c <- asks appDB
->   liftIO $ (quickQuery' c sql vs >>= return . Just) `catchSqlD` Nothing
+> withConnection :: (Handle -> IO a) -> App a
+> withConnection action = do h <- asks appDB
+>                            liftIO $ action h
 
-> queryValue' :: String -> [SqlValue] -> App (Maybe SqlValue)
-> queryValue' sql vs = do
->   c <- asks appDB
->   liftIO $ (queryValue c sql vs) `catchSqlD` Nothing
+> queryTuple' :: String -> Q Exp
+> queryTuple' sql = [| withConnection $(queryTuple sql) |]
 
-> queryAttribute' :: String -> [SqlValue] -> App (Maybe [SqlValue])
-> queryAttribute' sql vs = do
->   c <- asks appDB
->   liftIO $ (queryAttribute c sql vs >>= return . Just) `catchSqlD` Nothing
+> queryTuples' :: String -> Q Exp
+> queryTuples' sql = [| withConnection $(queryTuples sql) |]
 
-> quickInsertNo' :: String -> [SqlValue] -> String -> App (Maybe Integer)
-> quickInsertNo' sql vs seqname = do
->   c <- asks appDB
->   liftIO $ quickInsertNo c sql vs seqname `catchSqlD` Nothing
-
-> runStmt' :: String -> [SqlValue] -> App (Maybe Integer)
-> runStmt' sql vs = do
->   c <- asks appDB
->   liftIO $ (run c sql vs >>= return . Just) `catchSqlD` Nothing
-
-It may seem strange to return Maybe (), but we want to know if the database
-change succeeded.
-
-> quickStmt' :: String -> [SqlValue] -> App (Maybe ())
-> quickStmt' sql vs = do
->   c <- asks appDB
->   liftIO $ (quickStmt c sql vs >>= return . Just) `catchSqlD` Nothing
-
-Working with transactions outside of the App monad can be done, but we might as
-well make a version that fits with the rest of the style of the program (logs
-the exception and returns Nothing).
-
-> withTransaction' :: App a -> App (Maybe a)
-> withTransaction' actions = do
->   c <- asks appDB
->   r <- tryApp actions
->   case r of
->     Right x  -> do  liftIO $ commit c
->                     return $ Just x
->     Left e   -> do  logApp "exception" $ show e
->                     liftIO (try (rollback c) :: IO (Either SomeException ())) -- Discard any exception here
->                     return Nothing
-
-> run' :: String -> [SqlValue] -> App (Integer)
-> run' sql vs = do
->   c <- asks appDB
->   liftIO $ run c sql vs
+> execute' :: String -> Q Exp
+> execute' sql = [| withConnection $(execute sql) |]
 
 \subsubsection{Exceptions}
 
@@ -192,5 +135,5 @@ This always pulls from the DEFAULT section. It also only supports strings.
 >   cp <- asks appCP
 >   opt <- runErrorT $ get cp "DEFAULT" option
 >   case opt of
->     Left e   -> logApp "config" (show e) >> return Nothing
+>     Left _   -> return Nothing
 >     Right o  -> return $ Just o

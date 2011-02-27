@@ -15,9 +15,10 @@ with |readInput|). This is a common pattern in other modules.
 
 > module CMS.CGI (         getInput, getRequiredInput, getInputDefault,
 >                          readInput, readRequiredInput, readInputDefault,
->                          getInputs, handleErrors', referrerOrCMS,
+>                          getInputs, handleErrors, referrerOrCMS,
 >                          urlify, outputUnauthorized, outputText, outputJSON,
->                          output', tryCGI',
+>                          output', outputFPS, tryCGI',
+>                          getInputNames, getTextOrFileInput,
 >  {- Network.FastCGI -}   getInputFPS, getInputFilename,
 >                          MonadCGI, CGIResult, requestURI, requestMethod,
 >                          getVar, setHeader, output, redirect, remoteAddr,
@@ -26,7 +27,6 @@ with |readInput|). This is a common pattern in other modules.
 >  {- Network.URI -}       uriPath,
 >  {- Text.JSON -}         JSON, encode, toJSObject ) where
 
-> import CMS.DB
 > import CMS.Utils
 
 > import Control.Exception (Exception(..), try)
@@ -34,17 +34,20 @@ with |readInput|). This is a common pattern in other modules.
 > import Control.Monad.Writer (WriterT(..))
 > import Data.Monoid (mempty)
 > import Data.ByteString.Lazy.UTF8 (fromString)
-> import Data.Char (toLower, isAlphaNum)
+> import Data.Char (isAlphaNum)
+> import Database.TemplatePG (pgDisconnect)
+> import qualified Network.CGI as CGI
 > import Network.CGI.Monad (CGIT(..))
 > import Network.URI (uriPath)
+> import Text.Formlets as F
 > import Text.JSON (JSON, encode, toJSObject)
 
 We're going to hide some Network.CGI functions so that we can override them
 with versions that automatically handle UTF-8-encoded input.
 
-> import Network.FastCGI hiding (getInput, readInput, getInputs)
+> import Network.CGI hiding (getInput, readInput, getInputs, handleErrors)
 > import Network.CGI.Protocol (CGIResult(..))
-> import qualified Network.FastCGI as FCGI
+> import qualified Network.CGI as FCGI hiding (handleErrors)
 
 It's quite probable that we're going to trigger an unexpected exception
 somewhere in the program. This is especially likely because we're interfacing
@@ -52,14 +55,11 @@ with a database via strings. Rather than blow up, we'd like to catch and log
 the exception before giving the client some sort of indication that something
 went wrong.
 
-|catchCGI| will handle exceptions in the CGI monad. If no exception is thrown,
- we'll close the database handle and return the CGI result.
-
-> handleErrors' :: IConnection conn => conn -> CGI CGIResult -> CGI CGIResult
-> handleErrors' c a =  catchCGI' (do  r <- a
->                                     liftIO $ disconnect c
->                                     return r)
->                      (outputException' c)
+> handleErrors :: Handle -> CGI CGIResult -> CGI CGIResult
+> handleErrors h a = catchCGI' (do r <- a
+>                                  liftIO $ pgDisconnect h
+>                                  return r)
+>                              (outputException' h)
 
 Network.CGI provides |outputException| as a basic default error handler. This
 is a slightly modified version that logs errors.
@@ -72,12 +72,11 @@ handle. This is the perfect place to close it, as it'll be the last thing we do
 in the CGI monad (and the thrtead). If we didn't close it, we'd probably start
 accumulating a pile of unused database handles.
 
-> outputException' ::  (MonadCGI m, MonadIO m, IConnection conn) =>
->                      conn -> SomeException -> m CGIResult
-> outputException' c e = do
->   s <- liftIO $ logException c e
->   liftIO $ disconnect c
->   outputInternalServerError [s]
+> outputException' :: (MonadCGI m, MonadIO m) => Handle -> SomeException -> m CGIResult
+> outputException' h ex = do
+>   liftIO $ logError "exception" (show ex)
+>   liftIO $ pgDisconnect h
+>   outputInternalServerError [show ex]
 
 Usually we use the |withRequired| functions when an action requires that the
 client be authenticated. However, sometimes (as with AJAX) we want to output an
@@ -182,3 +181,23 @@ new characters.
 > tryCGI' (CGIT c) = CGIT (ReaderT (WriterT . f . runWriterT . runReaderT c ))
 >     where
 >       f = liftM (either (\ex -> (Left ex,mempty)) (first Right)) . try
+
+> getTextOrFileInput :: MonadCGI m => String -> m (Maybe (Either String File))
+> getTextOrFileInput name = do
+>   contentType' <- getInputContentType name
+>   case contentType' of
+>     Nothing  -> return Nothing
+>     Just ct  -> case ct of
+>                   "text/plain"  -> do
+>                     val <- fromJust `liftM` getInput name
+>                     return $ Just $ Left val
+>                   ct'           -> do
+>                     ct'' <- parseContentType ct'
+>                     content'   <- getInputFPS name
+>                     fileName'  <- getInputFilename name
+>                     return $ Just $ Right File {
+>                       content      = fromJust content',
+>                       fileName     = fromJust fileName',
+>                       contentType  = F.ContentType {  F.ctType = CGI.ctType ct'',
+>                                                       F.ctSubtype = CGI.ctSubtype ct'',
+>                                                       F.ctParameters = CGI.ctParameters ct'' } }

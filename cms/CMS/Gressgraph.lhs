@@ -68,7 +68,7 @@ multiple copies of the example. This is a bit ugly, but it works.
 >       (chainFile, chainH) <- openTempFile graphDir "graph.iptables"
 >       hPutStr chainH chains'
 >       hClose chainH
->       system $ "gressgraph < " ++ chainFile ++ " > " ++ (replaceExtension chainFile "twopi")
->       system $ "twopi -T" ++ format ++ " " ++ (replaceExtension chainFile "twopi") ++
->                                      " > " ++ (replaceExtension chainFile format)
+>       _ <- system $ "/usr/bin/gressgraph < " ++ chainFile ++ " > " ++ (replaceExtension chainFile "twopi")
+>       _ <- system $ "/usr/bin/twopi -T" ++ format ++ " " ++ (replaceExtension chainFile "twopi")
+>                                         ++ " > " ++ (replaceExtension chainFile format)
 >       return $ replaceExtension chainFile format

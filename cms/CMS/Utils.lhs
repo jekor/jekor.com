@@ -5,7 +5,7 @@ exist in any libraries I know of.
 
 > module CMS.Utils (                if', (?), safeHead, currentDay, currentYear,
 >                                   basename, translate, formatTime', (<$$>),
->                                   convertLineEndings,
+>                                   convertLineEndings, logError,
 >  {- Codec.Binary.UTF8.String -}   encodeString, decodeString,
 >  {- Control.Applicative -}        pure, (<$>), (<*>),
 >  {- Control.Applicative.Error -}  Failing(..), maybeRead,
@@ -19,7 +19,10 @@ exist in any libraries I know of.
 >  {- Data.Time.Clock -}            UTCTime,
 >  {- Data.Time.Format -}           formatTime,
 >  {- Data.Time.LocalTime -}        ZonedTime,
+>  {- Database.TemplatePG -}        withTransaction, execute, queryTuple, queryTuples,
+>  {- Debug.Trace -}                trace,
 >  {- System.FilePath -}            FilePath, (</>), (<.>), replaceExtension,
+>  {- System.IO -}                  Handle,
 >  {- System.Locale -}              defaultTimeLocale, rfc822DateFormat) where
 
 We make extensive use of the |liftM| and the Maybe monad.
@@ -33,13 +36,16 @@ We make extensive use of the |liftM| and the Maybe monad.
 > import Control.Monad.Trans (liftIO, MonadIO)
 > import Data.Char (toLower)
 > import Data.List.Utils (join) -- MissingH
-> import Data.Maybe (maybe, fromMaybe, fromJust, isJust, isNothing, catMaybes)
+> import Data.Maybe (fromMaybe, fromJust, isJust, isNothing, catMaybes)
 > import Data.Time.Calendar (Day, toGregorian)
 > import Data.Time.Clock (getCurrentTime, UTCTime)
 > import Data.Time.Format (formatTime, FormatTime)
 > import Data.Time.LocalTime (  getCurrentTimeZone, utcToLocalTime,
 >                               LocalTime(..), ZonedTime)
-> import System.FilePath (FilePath, (</>), (<.>), replaceExtension)
+> import Database.TemplatePG
+> import Debug.Trace (trace)
+> import System.FilePath ((</>), (<.>), replaceExtension)
+> import System.IO (Handle, hPutStrLn, stderr)
 > import System.Locale (defaultTimeLocale, rfc822DateFormat)
 
 It's often useful to have the compactness of the traditional tertiary operator
@@ -117,3 +123,6 @@ This comes from Real World Haskell.
 
 > isLineTerminator :: Char -> Bool
 > isLineTerminator c = c == '\r' || c == '\n'
+
+> logError :: String -> String -> IO ()
+> logError typ msg = hPutStrLn stderr $ "[" ++ typ ++ "] " ++ msg

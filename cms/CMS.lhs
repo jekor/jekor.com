@@ -46,11 +46,15 @@ out into a separate module.
 Each of these modules will be described in its own section.
 
 > import CMS.Article
-> import CMS.DB
 > import CMS.CGI
 > import CMS.Gressgraph
 > import CMS.Html hiding (method, options)
 > import CMS.Utils
+
+> import qualified Data.ByteString.Lazy as BS
+> import Data.ConfigFile (get)
+> import Data.Either.Utils (forceEither) -- MissingH
+> import Database.TemplatePG
 
 \section{Other Modules}
 
@@ -119,9 +123,11 @@ environment.
 > main = do  cp' <- getConfig
 >            case cp' of
 >              Left e    -> print e
->              Right cp  -> runSCGIConcurrent' forkIO 2048 (PortNumber 10034) (do
->                c <- liftIO connect
->                handleErrors' c (runApp c cp handleRequest))
+>              Right cp  -> do
+>                let pw = forceEither $ get cp "DEFAULT" "dbpass"
+>                runSCGIConcurrent' forkIO 2048 (PortNumber 10034) (do
+>                  h <- liftIO $ pgConnect "localhost" (PortNumber 5432) "cms" "cms" pw
+>                  handleErrors h (runApp h cp handleRequest))
 
 The |configFile| is the one bit of configuration that's the same in all
 environments.
@@ -206,8 +212,6 @@ function for a @GET@ and to another for a @POST@.
 
 > dispatch "GET"   ["comment","preview"] = commentPreview
 
-> dispatch "GET" ["rss"] = rssFeed
-
 \subsection{Gressgraph}
 
 Allow people to graph their iptables chains through the web. |graphFile| will
@@ -218,8 +222,15 @@ generate an image file which we can then send to the client using X-Sendfile.
 >   chains <- getRequiredInput "chains"
 >   graphDir <- fromJust <$> getOption "graphdir"
 >   graphFile <- liftIO $ graphChains chains format graphDir
->   setHeader "X-Sendfile" graphFile
->   output' ""
+>   let mimeType = case format of
+>                    "png" -> "image/png"
+>                    "svg" -> "image/svg+xml"
+>                    _     -> "application/octet-stream"
+>   setHeader "Content-Type" mimeType
+>   file <- liftIO $ BS.readFile graphFile
+>   outputFPS file
+> --  setHeader "X-Sendfile" graphFile
+> --  output' ""
 
 \subsection{Everything Else}
 
@@ -236,13 +247,10 @@ and associated functionality by using the stdPage function.
 
 > frontPage :: App CGIResult
 > frontPage = do
->   articles <- getArticles 10
->   let articles' = case articles of
->                     Nothing  -> return $ paragraph << "Error retrieving articles."
->                     Just as  -> map articleLinkHtml as
+>   articles <- map articleLinkHtml <$> getArticles 10
 >   stdPage "jekor.com" [] [] [
 >     thediv ! [theclass "column", identifier "left"] << [
->       boxer "Latest Articles" articles' ],
+>       boxer "Latest Articles" articles ],
 >     thediv ! [theclass "column", identifier "center"] << [
 >       image ! [src "/image/word-cloud.png", alt "word (tag) cloud"] ],
 >     thediv ! [theclass "column", identifier "right"] << [

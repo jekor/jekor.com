@@ -8,23 +8,18 @@ It turns out that using our program gives us some additional consistency
 (standard header and footer) and abstraction.
 
 > module CMS.Article (  articlePage, getArticle, articleBody, getArticles,
->                       articleLinkHtml, replyToComment, commentPreview,
->                       rssFeed ) where
+>                       articleLinkHtml, replyToComment, commentPreview ) where
 
 > import CMS.App
 > import CMS.CGI
-> import CMS.DB
 > import CMS.Html
 > import CMS.Utils hiding ((<$$>))
 
 > import Control.Exception (try)
-> import Data.Convertible.Base (convert)
 > import Data.List (deleteBy, findIndices)
 > import Data.Time.Clock (getCurrentTime)
 > import Network.Gravatar (gravatarWith, size)
-> import Network.URI (URI(..), parseURI)
 > import qualified System.IO.UTF8 as IO.UTF8
-> import Text.RSS
 > import qualified Text.XHtml.Strict.Formlets as F
 
 All articles have some common metadata.
@@ -74,36 +69,31 @@ advantages of the filesystem such as revision control.
 Retrieve an article by its name. For now, we only support one format (HTML).
 
 > getArticle :: String -> App (Maybe Article)
-> getArticle name' = do
->   (>>= articleFromTuple) <$>
->     queryTuple' "SELECT a1.name, a1.title, a1.time, a1.format, a1.version \
->                 \FROM article_version a1 \
->                 \INNER JOIN (SELECT name, MAX(version) AS version \
->                             \FROM article_version \
->                             \WHERE name = ? \
->                             \GROUP BY name) AS a2 USING (name, version)" [toSql name']
+> getArticle name' = liftM articleFromTuple <$> $(queryTuple'
+>    "SELECT a1.name, a1.title, a1.time, a1.format, a1.version \
+>    \FROM article_version a1 \
+>    \INNER JOIN (SELECT name, MAX(version) AS version \
+>                \FROM article_version \
+>                \WHERE name = {name'} \
+>                \GROUP BY name) AS a2 USING (name, version)")
 
-> articleFromTuple :: [SqlValue] -> Maybe Article
-> articleFromTuple [n,t,t',f,v]  = Just $
->   Article {  articleName     = fromSql n,
->              articleTitle    = fromSql t,
->              articleTime     = fromSql t',
->              articleFormat   = fromSql f,
->              articleVersion  = fromSql v,
->              articleTags     = [] }
-> articleFromTuple _            = Nothing
+> articleFromTuple :: (String, String, UTCTime, String, Integer) -> Article
+> articleFromTuple (n, t, t', f, v) = Article { articleName    = n
+>                                             , articleTitle   = t
+>                                             , articleTime    = t'
+>                                             , articleFormat  = f
+>                                             , articleVersion = v
+>                                             , articleTags    = []
+>                                             }
 
-> getArticles :: Int -> App (Maybe [Article])
-> getArticles lim = do
->   rs <- queryTuples' "SELECT a1.name, a1.title, a1.time, a1.format, a1.version \
->                      \FROM article_version a1 \
->                      \INNER JOIN (SELECT name, MAX(version) AS version \
->                                  \FROM article_version \
->                                  \GROUP BY name) AS a2 USING (name, version) \
->                      \ORDER BY a1.time DESC LIMIT ?" [toSql lim]
->   case rs of
->     Nothing   -> return Nothing
->     Just rs'  -> return $ Just $ catMaybes $ map articleFromTuple rs'
+> getArticles :: Int -> App [Article]
+> getArticles lim = map articleFromTuple <$> $(queryTuples'
+>   "SELECT a1.name, a1.title, a1.time, a1.format, a1.version \
+>   \FROM article_version a1 \
+>   \INNER JOIN (SELECT name, MAX(version) AS version \
+>               \FROM article_version \
+>               \GROUP BY name) AS a2 USING (name, version) \
+>   \ORDER BY a1.time DESC LIMIT {lim}")
 
 \subsection{Article Pages}
 
@@ -118,47 +108,31 @@ to them.
 >     Nothing  -> output404 ["article", name']
 >     Just a   -> do
 >       articles <- getArticles 10
->       let (articles', prevArticle, nextArticle) = case articles of
->             Nothing  -> (  [paragraph << "Error retrieving articles."],
->                            paragraph << "Error retrieving article.",
->                            paragraph << "Error retrieving article." )
->             Just as  -> let  as' = cycle as
->                              i = findIndices (\x -> articleName x == articleName a) as'
->                              i' = i !! 2
->                              prevArticle' = as' !! (i' - 1)
->                              nextArticle' = as' !! (i' + 1)
->                              articles'' = deleteBy (\x y -> articleName x == articleName y) a as in
->                         (  map articleLinkHtml articles'',
->                            articleLinkHtml prevArticle',
->                            articleLinkHtml nextArticle' )
+>       let  as = cycle articles
+>            i = findIndices (\x -> articleName x == articleName a) as
+>            i' = i !! 2
+>            prevArticle = articleLinkHtml $ as !! (i' - 1)
+>            nextArticle = articleLinkHtml $ as !! (i' + 1)
+>            articles'' = deleteBy (\x y -> articleName x == articleName y) a articles
+>            articles' = map articleLinkHtml articles''
 >       body <- articleBody a
 >       case body of
 >         Nothing  -> error "Error reading article body."
 >         Just b   -> do
->           r <- queryValue'  "SELECT root_comment FROM article_comments \
->                             \WHERE name = ?" [toSql name']
+>           r <- $(queryTuple' "SELECT root_comment FROM article_comments \
+>                              \WHERE name = {name'}")
 >           case r of
->             Just r'  -> do
->               let r'' = fromSql r' :: String
->               comments <- queryTuples'
->                 "SELECT c.comment_no, t.level, c.name, c.email, c.url, \
->                        \c.time, c.body \
->                 \FROM comment c \
->                 \INNER JOIN connectby('comment', 'comment_no', 'parent_no', ?, 0) \
->                   \AS t(comment_no int, parent_no int, level int) USING (comment_no)" [toSql r'']
-> --              moreComments <- queryAttribute'
-> --                "SELECT url FROM article_see_also \
-> --                \WHERE name = ?" [toSql name']
->               case (comments) of --, moreComments) of
->                 (Just cs)  -> do
-> --                  let moarComments = map (\x -> anchor ! [href x] << x) (map fromSql mcs)
->                   -- Discard the root comment.
->                   commentsHtml <- mapM displayCommentWithReply $ map commentFromValues $ safeTail cs
->                   (_, xhtml) <- runForm' $ commentForm $ fromSql r'
+>             Just r' -> do
+>               comments <- getComments r'
+>               case comments of
+>                 [] -> output404 ["article", name']
+>                 _  -> do
+>                   commentsHtml <- mapM displayCommentWithReply $ tail comments
+>                   (_, xhtml) <- runForm' $ commentForm $ r'
 >                   let comment' = thediv ! [theclass "reply"] << [
 >                                    thediv ! [theclass "comment editable toplevel"] <<
 >                                    form ! [method "POST"] << xhtml ]
->                       commentCount = max 0 (length cs - 1)
+>                       commentCount = max 0 (length comments - 1)
 >                       commentLink = anchor ! [href "#comments"] << (show commentCount ++ " comment" ++ (commentCount == 1 ? "" $ "s"))
 >                   stdPage (articleTitle a) [  JS "MochiKit", JS "comment",
 >                                               CSS "comment" ] []
@@ -174,19 +148,12 @@ to them.
 >                          thediv ! [identifier "comments", theclass "comments"] << [
 >                            concatHtml commentsHtml,
 >                            comment' ] ]
-> --                         thediv ! [identifier "related"] << [
-> --                           thespan ! [theclass "prev"] << [stringToHtml "Prev: ", prevArticle],
-> --                           thespan ! [theclass "next"] << [stringToHtml "Next: ", nextArticle],
-> --                           paragraph ! [thestyle "clear: both"] << noHtml ],
-> --                         thediv ! [identifier "see-also"] << [
-> --                           length moarComments == 0 ? noHtml $ h3 << "See Also",
-> --                           unordList moarComments ] ]
 >                 _                    -> error "Error retrieving comments."
 >             Nothing  -> output404 ["article",name']
 
-> safeTail :: [a] -> [a]
-> safeTail [] = []
-> safeTail (_:xs) = xs
+> getComments :: Integer -> App [Comment]
+> getComments root = map commentFromValues <$> $(queryTuples'
+>   "SELECT * FROM comment_tree({root})")
 
 Create a clickable link HTML fragment for an article.
 
@@ -207,13 +174,13 @@ directly on an object).
 >                           commentTime      :: UTCTime,
 >                           commentBody      :: String }
 
-> commentForm :: String -> AppForm Comment
+> commentForm :: Integer -> AppForm Comment
 > commentForm parent = plug (\xhtml -> concatHtml [
 >   thediv ! [theclass "speech soft"] << table << tbody << xhtml,
 >   thediv ! [theclass "controls"] << [
 >     helpButton "http://daringfireball.net/projects/markdown/basics" (Just "Formatting Help"),
 >     button << "Preview" +++ stringToHtml " " +++ submit "" "Send" ] ])
->     (mkComment  <$>  F.hidden (Just parent)
+>     (mkComment  <$>  F.hidden (Just (show parent))
 >                 <*>  nothingIfNull realNameForm
 >                 <*>  nothingIfNull emailForm
 >                 <*>  nothingIfNull urlForm
@@ -248,24 +215,17 @@ directly on an object).
 > formatSimpleTime :: UTCTime -> String
 > formatSimpleTime = formatTime' "%a %b %d, %Y %R"
 
-> commentFromValues :: [SqlValue] -> Comment
-> commentFromValues [n, l, r, e, u, t, b]  =
->   let n'  :: Integer       = fromSql n
->       l'  :: Integer       = fromSql l
->       r'  :: Maybe String  = fromSql r
->       e'  :: Maybe String  = fromSql e
->       u'  :: Maybe String  = fromSql u
->       t'  :: UTCTime       = fromSql t
->       b'  :: String        = fromSql b in
->     Comment {  commentNumber    = n',
->                commentLevel     = l',
->                commentParent    = undefined,
->                commentRealName  = r',
->                commentEmail     = e',
->                commentURL       = u',
->                commentTime      = t',
->                commentBody      = b' }
-> commentFromValues _ = error "Malformed comment"
+> commentFromValues :: (Maybe Integer, Maybe Integer, Maybe Integer,
+>                       Maybe String, Maybe String, Maybe String, Maybe UTCTime, Maybe String) -> Comment
+> commentFromValues (n, l, p, r, e, u, t, b) = Comment { commentNumber   = fromJust n
+>                                                      , commentLevel    = fromJust l
+>                                                      , commentParent   = fromJust p
+>                                                      , commentRealName = r
+>                                                      , commentEmail    = e
+>                                                      , commentURL      = u
+>                                                      , commentTime     = fromJust t
+>                                                      , commentBody     = fromJust b
+>                                                      }
 
 > displayComment :: Comment -> Html
 > displayComment c = concatHtml [
@@ -286,7 +246,7 @@ directly on an object).
 
 > displayCommentWithReply :: Comment -> App Html
 > displayCommentWithReply c = do
->   (_, xhtml) <- runForm' $ commentForm $ show $ commentNumber c
+>   (_, xhtml) <- runForm' $ commentForm $ commentNumber c
 >   let id' = "reply-" ++ (show $ commentNumber c)
 >       reply = concatHtml [
 >                 button ! [  theclass $ "reveal " ++ id' ] << "Reply",
@@ -309,36 +269,65 @@ This returns the new comment number.
 
 > storeComment :: Comment -> App (Maybe Integer)
 > storeComment c =
->  quickInsertNo'  "INSERT INTO comment (parent_no, name, email, url, body) \
->                               \VALUES (?, ?, ?, ?, ?)"
->                  [  toSql $ commentParent c, toSql $ commentRealName c,
->                     toSql $ commentEmail c, toSql $ commentURL c,
->                     toSql $ commentBody c ]
->                  "comment_comment_no_seq"
+>   case (commentRealName c, commentEmail c, commentURL c) of
+>     (Just r, Just e, Just u) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, name, email, url, body) \
+>       \VALUES ({commentParent c}, {r}, {e}, {u}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Just r, Just e, Nothing) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, name, email, body) \
+>       \VALUES ({commentParent c}, {r}, {e}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Just r, Nothing, Just u) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, name, url, body) \
+>       \VALUES ({commentParent c}, {r}, {u}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Nothing, Just e, Just u) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, email, url, body) \
+>       \VALUES ({commentParent c}, {e}, {u}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Just r, Nothing, Nothing) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, name, body) \
+>       \VALUES ({commentParent c}, {r}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Nothing, Just e, Nothing) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, email, body) \
+>       \VALUES ({commentParent c}, {e}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Nothing, Nothing, Just u) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, url, body) \
+>       \VALUES ({commentParent c}, {u}, {commentBody c}) \
+>       \RETURNING comment_no")
+>     (Nothing, Nothing, Nothing) -> $(queryTuple'
+>       "INSERT INTO comment (parent_no, body) \
+>       \VALUES ({commentParent c}, {commentBody c}) \
+>       \RETURNING comment_no")
 
 > replyToComment :: App CGIResult
 > replyToComment = do
->   res <- runForm (commentForm "0") $ Right noHtml
+>   res <- runForm (commentForm 0) $ Right noHtml
 >   case res of
 >     Left xhtml     -> outputJSON [  ("html", showHtmlFragment $ thediv ! [theclass "comment editable"] << xhtml),
 >                                     ("status", "incomplete") ]
 >     Right comment  -> do
 >       commentNo <- storeComment comment
->       res' <- queryTuple'  "SELECT c.comment_no, 0 as level, \
->                                   \c.name, c.email, c.url, \
->                                   \c.time, c.body \
->                            \FROM comment c \
->                            \WHERE comment_no = ?"
->                            [toSql commentNo]
->       case res' of
->         Nothing  -> outputJSON [  ("html", "Error posting comment."),
->                                   ("status", "error") ]
->         Just c   -> do
->           c' <- asks appDB
->           liftIO $ commit c'
->           comment' <- displayCommentWithReply $ commentFromValues c
->           outputJSON [  ("html", showHtmlFragment comment'),
->                         ("status", "accepted") ]
+>       case commentNo of
+>         Nothing -> outputJSON [  ("html", "Error posting comment."),
+>                                  ("status", "error") ]
+>         Just n  -> do
+>           cs <- getComments n
+> --      res' <- $(queryTuple' "SELECT COALESCE(c.comment_no), 0 as level, parent_no, \
+> --                                   \c.name, c.email, c.url, \
+> --                                   \COALESCE(c.time), COALESCE(c.body) \
+> --                            \FROM comment c \
+> --                            \WHERE comment_no = {commentNo}")
+>           case cs of
+>             [] -> outputJSON [  ("html", "Error posting comment."),
+>                                 ("status", "error") ]
+>             _  -> do
+>               comment' <- displayCommentWithReply $ head cs
+>               outputJSON [  ("html", showHtmlFragment comment'),
+>                             ("status", "accepted") ]
 
 We need to make sure that this doesn't go out of sync with displayComment.
 
@@ -346,7 +335,7 @@ Does this lead to XSS vulnerabilities?
 
 > commentPreview :: App CGIResult
 > commentPreview = do
->   res <- runForm (commentForm "0") $ Right noHtml
+>   res <- runForm (commentForm 0) $ Right noHtml
 >   case res of
 >     Left xhtml     -> outputJSON [  ("html", showHtmlFragment $ thediv ! [theclass "comment editable"] << xhtml),
 >                                     ("status", "incomplete") ]
@@ -354,37 +343,3 @@ Does this lead to XSS vulnerabilities?
 >       t <- liftIO getCurrentTime
 >       outputJSON [  ("html", showHtmlFragment $ displayComment (comment {commentTime = t})),
 >                     ("status", "OK") ]
-
-> itemFromArticle :: Article -> App (Maybe Item)
-> itemFromArticle a = do
->   body <- articleBody a
->   return $ case body of
->     Nothing  -> Nothing
->     Just b   -> let uri = fromJust $ parseURI $ "http://jekor.com/article/" ++ articleName a in
->       Just [  Title        $ articleTitle a,
->               Link         $ uri,
->               Description  $ (take 256 $ showHtmlFragment b) ++ (" [...]"),
->               Comments     $ uri {uriFragment = "#comments"},
->               Guid         True $ show uri,
->               PubDate      $ convert $ articleTime a ]
-
-For now, our site-wide RSS feed just contains articles.
-
-> rssFeed :: App CGIResult
-> rssFeed = do
->   articles <- getArticles 10
->   copyright <- copyrightStatement
->   items <- catMaybes <$> maybe (return []) (mapM itemFromArticle) articles
->   let  lastUpdate = case articles of
->                       Nothing  -> []
->                       Just as  -> [LastBuildDate $ convert $ articleTime $ head as]
->   output' $ showXML $ rssToXML $
->     RSS  "jekor.com" (fromJust $ parseURI "http://jekor.com/")
->          "Programming Philosophy (site-wide feed)"
->          ([  Language "en-us",
->              Copyright copyright,
->              ChannelCategory Nothing "Programming",
->              ChannelCategory Nothing "Programming Philosophy",
->              ChannelCategory Nothing "Functional Programming",
->              ChannelCategory Nothing "Literate Programming" ] ++ lastUpdate)
->          items

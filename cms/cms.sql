@@ -49,6 +49,24 @@ CREATE TABLE comment (
        parent_no INTEGER REFERENCES comment (comment_no)
 );
 
+CREATE TYPE displayable_comment AS (
+       comment_no INTEGER,
+       level INTEGER,
+       parent INTEGER,
+       name TEXT,
+       email TEXT,
+       url TEXT,
+       time TIMESTAMP (0) WITH TIME ZONE,
+       comment TEXT
+);
+
+CREATE FUNCTION comment_tree(INTEGER) RETURNS SETOF displayable_comment AS $$
+  SELECT c.comment_no, t.level, t.parent_no, c.name, c.email, c.url, c.time, c.body
+  FROM comment c
+  INNER JOIN connectby('comment', 'comment_no', 'parent_no', $1::TEXT, 0)
+          AS t(comment_no int, parent_no int, level int) USING (comment_no)
+$$ LANGUAGE SQL;
+
 CREATE TABLE article_comments (
        name TEXT NOT NULL REFERENCES article (name) PRIMARY KEY,
        root_comment INTEGER REFERENCES comment (comment_no) NOT NULL

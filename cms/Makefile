@@ -1,15 +1,23 @@
 # jekor.com CMS CGI
 
 cgi := cms.cgi
-
 lhss := $(shell find . -name "*.lhs" -print)
+binary := dist/build/$(cgi)/$(cgi)
 
-all : $(cgi)
+all : $(binary)
 
 doc : cms.pdf
 
-cms.cgi : $(lhss)
-	ghc -Wall -fglasgow-exts -threaded --make -o $(cgi) $^
+configure : $(lhss)
+	cabal configure
+
+$(binary) : $(lhss)
+	TPG_DB="cms" TPG_USER="cms" cabal build
+
+install : $(binary)
+	mv ../$(cgi) ../$(cgi).old
+	cp $(binary) ../$(cgi)
+	strip ../$(cgi)
 
 cms.pdf : CMS.tex
 	pdflatex $<
@@ -17,16 +25,14 @@ cms.pdf : CMS.tex
 CMS.tex : $(lhss)
 	lhs2TeX CMS.lhs > $@
 
-install : cms.cgi
-	mv ~/.cabal/bin/cms.cgi ~/.cabal/bin/cms.cgi.backup
-	cp cms.cgi ~/.cabal/bin/cms.cgi
-	-killall $(cgi)
-
 tags : $(lhss)
 	hasktags -e $^
 
+lint : $(lhss)
+	hlint $^
+
 clean :
-	find . -iregex ".*\.\(o\|hi\|o-boot\|hi-boot\)" -print0 | xargs -0 rm
+	cabal clean
 
 metrics : $(lhss)
 	@echo -e -n "\tSLOC: "

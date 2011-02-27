@@ -33,12 +33,9 @@ functions. An example of this is |linkList|.
 > import CMS.CGI
 > import CMS.Utils
 
-> import Control.Arrow (second)
 > import Data.List (intersperse, find)
 > import Text.Regex (mkRegex, subRegex)
 > import Text.Regex.Posix ((=~))
-> import Text.Formlets (  runFormState, plug, nothingIfNull,
->                         check, ensure, ensures, checkM, ensureM)
 > import Text.Pandoc (  readMarkdown, writeHtml, defaultParserState,
 >                       defaultWriterOptions )
 > import Text.Formlets as F
@@ -63,7 +60,7 @@ footer. It also includes @page.css@.
 >   output' $ renderHtml $ header <<
 >     [  thetitle << t,
 >        concatHtml (map includeDep ([CSS "page"] ++ deps)),
->        thelink ! [href "/rss", thetype "application/rss+xml", rel "alternate", title "Site-wide RSS Feed"] << noHtml,
+>        -- thelink ! [href "/rss", thetype "application/rss+xml", rel "alternate", title "Site-wide RSS Feed"] << noHtml,
 >        concatHtml head' ] +++
 >     body << [  headerB,
 >                jsNotice,
@@ -119,9 +116,7 @@ The footer bar is more simple. It just includes some links to static content.
 > footerBar = do
 >   copy <- copyrightNotice
 >   return $ thediv ! [identifier "footer-bar"] <<
->     [  linkList
->        [  anchor ! [href "/rss"] << "RSS" ],
->        copy,
+>     [  copy,
 >        googleAnalyticsTag ]
 
 We want a copyright notice at the bottom of every page. Since this is a
@@ -283,11 +278,11 @@ when implementing ``preview'' functionality for forms.
 
 > runForm' :: XHtmlForm (AppT IO) a -> App (Failing a, Html)
 > runForm' frm = do
->   env <- map (second Left) <$> getInputs
->   let (res, markup, _) = runFormState env "" frm
->   status  <- res
->   xhtml   <- markup
->   return (status, xhtml)
+>   names <- getInputNames
+>   env <- zip names . map fromJust <$> mapM getTextOrFileInput names
+>   let (res, markup, _) = runFormState env frm
+>   status <- res
+>   return (status, markup)
 
 \subsection{Paging}
 
