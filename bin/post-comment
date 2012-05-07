@@ -1,0 +1,62 @@
+#!/bin/bash
+export LC_CTYPE=en_US.UTF-8
+top=$(cd $(dirname $(readlink ${BASH_SOURCE[0]}))/.. && pwd)
+
+comment=$(mktemp)
+
+cat | jw normalize > $comment
+if [ $? -ne 0 ]; then
+    rm $comment
+    echo "Comment must be posted as JSON data."
+    exit 1
+fi
+
+# Check that the body is non-empty.
+if jw lookup body < $comment | egrep -q '^(null|"\s*")$'; then
+    rm $comment
+    echo "Missing body."
+    exit 1
+fi
+
+# The comment's ID will be the md5 hash of its body.
+id=$(jw lookup body < $comment | md5sum | cut -d' ' -f1)
+
+# Make sure that this comment hasn't already been posted.
+if [ -e "$id" ]; then
+    rm $comment
+    echo "Duplicate comment body."
+    exit 1
+fi
+mkdir "$id"
+
+# Don't let the email address touch the filesystem in a place that's served to
+# the public; that would be irresponsible. Instead, store the email address in
+# a safe place and store an md5 hash of the email address instead (useful for
+# avatars and such).
+email=$(cat $comment | jw lookup email | jw unstring)
+hash=$(echo -n $email | md5sum | cut -d' ' -f1 | tr -d "\n")
+echo -e "$hash\n$email" | jw ziplines | cat - $top/var/emails | jw merge > $top/var/emails
+# Add a timestamp while we're at it.
+echo -n $hash | jw string | jw name emailhash | cat $comment - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
+rm $comment
+
+# Setup a symlink to POST for adding replies.
+ln -s ../$(readlink POST) "$id/POST"
+
+# Update the aggregation of comments.
+# Figure out which item we're posting a comment to. It's pretty easy, just work
+# back up the directory tree until we find "comment".
+
+until [[ $(basename $(pwd)) == "comment" ]]; do
+    cd ..
+done
+
+# Don't put code below here unless it needs to execute as the same directory as
+# what we traversed to above.
+
+find -name "application.json" > tmp-comments
+map 'chop / 2..-2 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
+xargs cat < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
+rm tmp-comments tmp-paths
+
+echo $id

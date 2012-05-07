@@ -1,0 +1,108 @@
+% Towards a Lifelong Content Management System
+% Chris Forno (jekor)
+% 2009-04-21 19:46:00 -0700
+
+What follows is a bit of a rant. If you're passionate about CMSes, you'll probably find something here that resonates with you. But I don't have the solution yet. With that disclaimer...
+
+I expect my content to grow with me for the rest of my life, and I want the same from my CMS. I've tried Plone, MediaWiki, WordPress, Serendipity, and others, and none of them have everything I'm looking for:
+
+> The most frustrating part of looking for a CMS is finding one that fits most, but not all of your requirements.
+
+ * expressive markup (LaTeX, Graphviz)
+ * multiple output formats (HTML, PDF)
+ * clean URLs
+ * versioning
+ * comments (threading, spam filtering)
+ * metadata (tagging, ratings)
+ * editing ("offline", revision control)
+
+There are now more than 1,000 published CMSes![^1] This number has doubled in the last 3 years.[^2] This tells me that no one has gotten the formula right yet. And I think I know why.
+
+## What Happened to the Unix Philosophy?
+
+The most frustrating part of looking for a CMS is finding one that fits most, but not all of your requirements. MediaWiki is good at versioning, LaTeX, and Graphviz, but it doesn't handle blog-style functionality like comments and tagging. WordPress is good at syndication, tagging, and comments but doesn't handle complex articles.
+
+<!-- Add 3rd example. Maybe Drupal? -->
+
+> Even if you found a CMS that did everything you want right now, how do you know that it will still do everything you want next year?
+
+Can we really find what we're looking for among these monolithic systems that try to do everything? Even if you found a CMS that did everything you want right now, how do you know that it will still do everything you want next year? Technology is constantly changing, and so might your personal desires and needs. Do you want to tie yourself to the whims and schedule of a single team of programmers? Do you want to commit yourself to making changes to a complex system written in a single programming language, perhaps one that you're not fond of?
+
+## The CMS as a Complex Multi-Cellular Organism
+
+What constitutes a CMS? What are its smallest components?
+
+### Publishing Formats
+
+I'd argue that CMSes focus more on managing data about content than the content itself. Content seems to be expected to look like a typical forum post: some headlines, a little bit of emphasis, and maybe a couple images.
+
+There are a number of excellent publishing formats out there:
+
+ - [LaTeX](http://www.latex-project.org/) excels at mathematics and typographic style.
+ - [DocBook](http://en.wikipedia.org/wiki/DocBook) is used for lengthy technical documentation, especially books.
+ - [Muse-Mode](http://mwolson.org/projects/EmacsMuse.html) and [Pandoc](http://johnmacfarlane.net/pandoc/) help those who like writing in a simple text format.
+
+Why are we reinventing them or presenting authors with a textarea for HTML input? What if one of these doesn't completely satisfy your needs. Why do you need to stick to 1 format for everything you write? Isn't the output format all that matters to your readers? If all of these tools can output what you need, why can't you use them all?
+
+![Publishing Component](/image/publishing-component)
+
+### HTTP Dispatcher
+
+HTTP will be the protocol over which people retrieve content for the forseeable future. But that doesn't mean that we should assume that that will always be the case. Why not pull the HTTP interface out into a separate component as well? This allows us to begin to think about HTTP in its correct terms: as a distribution system. In this new paradigm, email is also a distribution system, as are printed documents.
+
+### Syndication/Notification (RSS/Email)
+
+Syndication and notification do not need to be a part of a web-based program. Why not dispatch requests from an HTTP Dispatcher directly to a separate system?
+
+![Syndication Component](/image/syndication-component)
+
+Now we can see that other forms of content delivery, such as email updates, can be worked on independently of any type of web interface.
+
+### Versioning and Revision Control
+
+"Permalinks" aren't that useful to other people citing your content when your content might change over time. A permalink is missing a vital component: a version number. But most CMSes don't support versioning.
+
+It's also useful to be able to track diffs of your content, especially for people who want to receive updates or see what's changed. Wikis tend to do a good job at this, but most CMSes have no support at all.
+
+CMSes are generally designed around relational databases. Relational databases don't generally have built-in versioning. This means that when a CMS implements revision control (which happens rarely) it tends to create a new way of doing so.
+
+What about using your favorite versioning system instead?
+
+### Blogging
+
+I notice a divide among online writers. On one side you have bloggers. Frequency, brevity, and relevance to current events seem to be their focus. On the other hand you have academics and authors. They focus on writing a collection of longer, less ephemeral pieces. But rarely do we see a combination, and when we do they're being handled by multiple systems: static HTML pages for the main site with papers and articles and a blogging system living under `/blog`.
+
+Why this dichotomy? Why can't your content management system have both? What happens when you want people to be able to comment on your articles? The easiest solution seems to be to cram your articles into your blog software. But this has negative side-effects.
+
+Let's build a system that treats all content types as first-class citizens. Allow people to rate or subscribe to updates of journal entries as well as articles.
+
+### Metadata and Interaction
+
+Content becomes more valuable when it's interpreted by others. We're all beginning to realize this, but we still don't have general and interchangable systems for doing so.
+
+Most blog commenting systems are insufficient for anything but brief, short-lived posts. First of all, they aren't generally threaded. This makes having a large meaningful conversation over a long period of time more difficult.
+
+What about karma/voting systems for comments? Wouldn't it be nice to have the most relevant comments about your article sorted to the top so that they appear immediately following your content?
+
+## This Article Published with My Lifelong CMS
+
+The article you're reading was created and published within the framework I've described above. It's not perfect yet, but it's a start.
+
+Publishing Formats
+  : Muse Mode
+Publishing System
+  : GNU Make + Bash
+HTTP Dispatcher/Interaction
+  : Haskell program (unnamed)
+Syndication
+  : Haskell program (unnamed)
+Relational Database
+  : PostgreSQL
+Revision Control
+  : Darcs
+
+## Footnotes
+
+[^1]:  <http://www.cmsmatrix.org/> lists 1,049 CMSes as of 2009-04-25. This number does not include many wikis!
+
+[^2]:  Jono Bacon. [Context vs. Content](http://www.onlamp.com/pub/wlg/9236). 2006

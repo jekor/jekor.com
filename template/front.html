@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>jekor.com</title>
+    <link rel="stylesheet" type="text/css" href="/style/bootstrap">
+    <link rel="stylesheet" type="text/css" href="/style/front">
+    <link href="/articles/feed" type="application/rss+xml" rel="alternate" title="Articles Feed">
+  </head>
+  <body>
+    <div id="page-container">
+    <section id="articles">
+      <h2>Articles</h2>
+      <ul>
+        {articles}
+      </ul>
+    </section>
+    <section id="programs">
+      <h2>Programs</h2>
+      <ul>
+        <li><a href="gressgraph">gressgraph</a></li>
+        <li><a href="xtee">xtee</a></li>
+        <li><a href="log2rotate">log<sub>2</sub>rotate</a></li>
+        <li><a href=".emacs">.emacs</a></li>
+      </ul>
+    </section>
+    <section id="sites">
+      <h2>Sites</h2>
+      <ul>
+        {sites}
+      </ul>
+    </section>
+    <section id="about">
+      <h2>About</h2>
+      <ul>
+        <li><a href="mailto:jekor@jekor.com">jekor@jekor.com</a></li>
+        <li><a href="resume">résumé</a></li>
+      </ul>
+    </section>
+    </div>
+    <script type="text/javascript">
+      {analytics}
+    </script>
+  </body>
+</html>

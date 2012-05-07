@@ -1,0 +1,15 @@
+body
+  text-align: center
+
+#page-container
+  display: inline-block
+  margin-left: auto
+  margin-right: auto
+  overflow: hidden
+  padding-top: 5em
+
+section
+  float: left
+  text-align: left
+  margin-left: 1em
+  margin-right: 1em

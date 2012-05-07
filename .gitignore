@@ -1,0 +1,10 @@
+/www/article/*/application.json
+/www/article/*/comment/POST
+/www/article/*/comments/application.json
+/www/article/*/text.html
+/www/articles/application.json
+/www/articles/feed/application.rss+xml
+/www/gressgraph/graph/
+/www/style/*/text.css
+/www/text.html
+application.pdf

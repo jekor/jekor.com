@@ -1,2 +1,0 @@
-0 3 * * * /home/chris/jekor.com/scripts/backup-database-to-s3.sh
-0 4 * * * /home/chris/jekor.com/scripts/rotate-backups.sh

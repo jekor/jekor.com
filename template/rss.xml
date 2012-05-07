@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>jekor.com Articles</title>
+    <description>articles published by Chris Forno (jekor)</description>
+    <link>http://jekor.com/articles</link>
+    <lastBuildDate>{date}</lastBuildDate>
+    {items}
+  </channel>
+</rss>
