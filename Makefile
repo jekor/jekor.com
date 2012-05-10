@@ -5,7 +5,7 @@ sasses := $(shell find www -name "text.x-sass")
 markdowns := $(shell find www/article -name "text.x-web-markdown")
 sync_options := -avz bin etc var www --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
 
-all : www/text.html www/articles www/articles/application.json $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(markdowns:text.x-web-markdown=comment/POST) $(markdowns:text.x-web-markdown=comments) $(markdowns:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml var/emails
+all : www/text.html www/articles www/articles/application.json $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(markdowns:text.x-web-markdown=comment/POST) $(markdowns:text.x-web-markdown=comments) $(markdowns:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json
 
 sync :
 	rsync $(sync_options)
@@ -58,3 +58,12 @@ var :
 
 var/emails : var
 	echo "{}" > $@ && chmod 666 $@
+
+www/resume/text.html : www/resume/text.x-web-markdown template/resume.html etc/analytics.js
+	jw string < etc/analytics.js | jw name analytics | jigplate template/resume.html > tmp-resume.html
+	pandoc --from=markdown --to=html5 --smart --template=tmp-resume.html --email-obfuscation=none $< > $@
+	rm tmp-resume.html
+
+www/script/domcharts/bar/application.json :
+	mkdir -p www/script/domcharts/bar
+	wget https://raw.github.com/jekor/domcharts/master/bar.js -O $@
