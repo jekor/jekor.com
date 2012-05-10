@@ -3,7 +3,7 @@ sites := http://www.vocabulink.com/ http://www.minjs.com/ http://www.domcharts.c
 SHELL := /bin/bash
 sasses := $(shell find www -name "text.x-sass")
 markdowns := $(shell find www/article -name "text.x-web-markdown")
-sync_options := -avz bin etc var www --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* linode:jekor.com/
+sync_options := -avz bin etc var www --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
 
 all : www/text.html www/articles www/articles/application.json $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(markdowns:text.x-web-markdown=comment/POST) $(markdowns:text.x-web-markdown=comments) $(markdowns:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml var/emails
 
