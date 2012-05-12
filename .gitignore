@@ -12,3 +12,10 @@ application.pdf
 /www/resume/text.html
 /www/script/bootstrap/application.javascript
 /www/script/domcharts/bar/application.json
+/var/emails
+/etc/sv/fsrest-jekor.com/log/config
+/etc/sv/fsrest-jekor.com/log/main/.gitignore
+/www/image/logo/deviantart/image.png
+/www/image/logo/tomshardware/image.png
+/www/image/logo/yucaipa/image.gif
+/TODO
