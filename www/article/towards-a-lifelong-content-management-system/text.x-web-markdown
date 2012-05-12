@@ -2,6 +2,8 @@
 % Chris Forno (jekor)
 % 2009-04-21 19:46:00 -0700
 
+<!-- Updated Time-stamp: <2012-05-12 07:48:49 PDT Chris Forno (jekor)> -->
+
 What follows is a bit of a rant. If you're passionate about CMSes, you'll probably find something here that resonates with you. But I don't have the solution yet. With that disclaimer...
 
 I expect my content to grow with me for the rest of my life, and I want the same from my CMS. I've tried Plone, MediaWiki, WordPress, Serendipity, and others, and none of them have everything I'm looking for:
@@ -11,9 +13,7 @@ I expect my content to grow with me for the rest of my life, and I want the same
  * expressive markup (LaTeX, Graphviz)
  * multiple output formats (HTML, PDF)
  * clean URLs
- * versioning
- * comments (threading, spam filtering)
- * metadata (tagging, ratings)
+ * comments (with threading)
  * editing ("offline", revision control)
 
 There are now more than 1,000 published CMSes![^1] This number has doubled in the last 3 years.[^2] This tells me that no one has gotten the formula right yet. And I think I know why.
@@ -89,17 +89,13 @@ What about karma/voting systems for comments? Wouldn't it be nice to have the mo
 The article you're reading was created and published within the framework I've described above. It's not perfect yet, but it's a start.
 
 Publishing Formats
-  : Muse Mode
+  : Pandoc's Markdown
 Publishing System
-  : GNU Make + Bash
+  : GNU Make, Bash, [jcoreutils](https://github.com/jekor/jcoreutils), [jsonwrench](https://github.com/jekor/jsonwrench)
 HTTP Dispatcher/Interaction
-  : Haskell program (unnamed)
-Syndication
-  : Haskell program (unnamed)
-Relational Database
-  : PostgreSQL
+  : [fsrest](https://github.com/jekor/fsrest)
 Revision Control
-  : Darcs
+  : Git
 
 ## Footnotes
 
