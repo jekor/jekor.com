@@ -2,13 +2,13 @@
 
 <!--
 Created: 2006-10-30
-Time-stamp: <2012-05-10 09:57:20 PDT Chris Forno (jekor)>
+Time-stamp: <2012-05-19 21:09:14 PDT Chris Forno (jekor)>
 -->
 
 <div id="hyperlinks">
-<a href="mailto:jekor@jekor.com"><code class="url">jekor@jekor.com</code></a>
-<http://jekor.com/>
-<https://github.com/jekor/>
+<a class="email" href="mailto:jekor@jekor.com"><code class="url">jekor@jekor.com</code></a>
+<a class="site" href="http://jekor.com/"><code class="url">http://jekor.com/</code></a>
+<a class="github" href="https://github.com/jekor"><code class="url">https://github.com/jekor</code></a>
 </div>
 
 <table id="technologies-placeholder"></table>
