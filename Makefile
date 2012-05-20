@@ -27,7 +27,6 @@ www/article/%/application.json : www/article/%/text.x-web-markdown
 
 www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html template/nav.html etc/analytics.js
 	jw name articles < www/articles/application.json | cat - <(echo $(sites) | tr ' ' "\n" | map "tr -d \"\n\" | jw string | jw name url" | jw array | jw name sites) | jw merge | jigplate template/nav.html template/article-item.html template/site-item.html | jw string | jw name nav | cat - $< | jw merge | cat - <(jw string < etc/analytics.js | jw name analytics) | jw merge | jigplate template/article.html > $@
-# jw unarray < www/articles/application.json | grep -v $$(jw lookup name < $<) | head -n 3 | jw array | jw name recent | cat - $< jw merge | jigplate template/article.html template/article-item.html > $@
 
 www/articles :
 	mkdir $@
