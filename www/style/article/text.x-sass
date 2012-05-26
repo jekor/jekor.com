@@ -35,3 +35,12 @@ figure
     .btn
       float: right
       margin: 0.5em
+
+h1
+  margin-bottom: 0.25em
+
+q
+  &:before
+    content: "“"
+  &:after
+    content: "”"
