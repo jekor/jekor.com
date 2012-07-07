@@ -58,10 +58,8 @@ www/articles/feed :
 www/articles/feed/application.rss+xml : www/articles/application.json template/rss-item.xml template/rss.xml www/articles/feed
 	cat $< | jw name items | cat - <(date -R | tr -d "\n" | jw string) | jw insert date | jigplate template/rss-item.xml template/rss.xml > $@
 
-www/article/%/comment :
-	mkdir $@ && chmod 777 $@
-
-www/article/%/comment/POST : www/article/%/comment
+www/article/%/comment/POST :
+	mkdir -p $$(dirname $@) && chmod 777 $$(dirname $@)
 	ln -sf ../../../../bin/post-comment $@
 
 www/article/%/comments :
