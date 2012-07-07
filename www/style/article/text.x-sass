@@ -44,3 +44,7 @@ q
     content: "“"
   &:after
     content: "”"
+
+footer
+  .container
+    max-width: 60em
