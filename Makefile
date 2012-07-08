@@ -75,9 +75,11 @@ var/emails : var
 	echo "{}" > $@ && chmod 666 $@
 
 www/resume/text.html : www/resume/text.x-web-markdown template/resume.html etc/analytics.js
-	jw string < etc/analytics.js | jw name analytics | jigplate template/resume.html > tmp-resume.html
-	pandoc --from=markdown --to=html5 --smart --template=tmp-resume.html --email-obfuscation=none $< > $@
-	rm tmp-resume.html
+	cat \
+	<(head -n 1 $< | cut -d' ' -f2- | jw string | jw name title) \
+	<(pandoc --from=markdown --to=html5 --smart --email-obfuscation=none $< | jw string | jw name body) \
+	<(jw string < etc/analytics.js | jw name analytics) \
+	| jw merge | jigplate template/resume.html > $@
 
 www/script/domcharts/bar/application.json :
 	mkdir -p www/script/domcharts/bar
