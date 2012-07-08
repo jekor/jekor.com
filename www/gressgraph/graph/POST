@@ -2,6 +2,7 @@
 export LC_CTYPE=en_US.UTF-8
 
 input=$(mktemp)
+chmod go+r $input
 
 cat > $input
 
@@ -22,4 +23,4 @@ fi
 
 rm $input
 
-echo $id
+echo -n $id

@@ -4,7 +4,7 @@ markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 sync_options := -avz bin etc var www --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
 
-all : www/text.html $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json
+all : www/text.html $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json www/gressgraph/text.html
 
 sync :
 	rsync $(sync_options)
@@ -33,16 +33,22 @@ var/nav.html : www/articles/application.json template/nav.html template/article-
 
 %application.json : %text.x-web-markdown
 	cat \
-	<(cat <(echo -e "title\nauthor\ndate") <(head -n 3 $< | cut -d' ' -f2-) | jw ziplines) \
+	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
 	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name name) \
-	<(pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none < $< | jw string | jw name body) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
-www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html template/nav.html etc/analytics.js var/nav.html
+www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html etc/analytics.js var/nav.html
 	cat $< \
 	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/article.html > $@
+
+www/%/text.html : www/%/application.json template/page.html etc/analytics.js var/nav.html
+	cat $< \
+	<(jw string < etc/analytics.js | jw name analytics) \
+	<(jw string < var/nav.html | jw name nav) \
+	| jw merge | jigplate template/page.html > $@
 
 www/articles/application.json : $(articles:text.x-web-markdown=application.json)
 	mkdir -p www/articles

@@ -20,3 +20,5 @@ application.pdf
 /www/image/logo/yucaipa/image.gif
 /TODO
 /www/image/glyphicons-halflings/image.png
+/www/*/application.json
+/www/*/text.html

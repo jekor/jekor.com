@@ -1,66 +1,9 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>gressgraph - Visualize Your iptables Firewall</title>
-    <link rel="stylesheet" type="text/css" href="/style/bootstrap">
-    <link rel="stylesheet" type="text/css" href="/style/article">
-  </head>
-  <body>
-    <div class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container">
-      <a class="brand" href="/">jekor.com</a>
-      <ul class="nav">
-        <li class="dropdown">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">Articles <b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href="/article/is-haskell-a-good-choice-for-web-applications">Is Haskell a Good Choice for Web Applications?</a></li>
-<li><a href="/article/towards-a-lifelong-content-management-system">Towards a Lifelong Content Management System</a></li>
-<li><a href="/article/what-gets-documented-gets-improved">What Gets Documented Gets Improved</a></li>
-<li><a href="/article/the-cockroach-and-the-ants">The Cockroach and the Ants</a></li>
+% gressgraph - Visualize Your iptables Firewall
+% Chris Forno (jekor)
+% 2012-07-08 12:56 -00:00
+% Copyright 2008, 2012 Chris Forno
 
-          </ul>
-        </li>
-        <li class="dropdown">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">Programs <b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href="/gressgraph">gressgraph</a></li>
-            <li><a href="/xtee">xtee</a></li>
-            <li><a href="/log2rotate">log<sub>2</sub>rotate</a></li>
-            <li><a href="/.emacs">.emacs</a></li>
-          </ul>
-        </li>
-        <li class="dropdown">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">Sites <b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href="http://www.vocabulink.com/
-">http://www.vocabulink.com/
-</a></li>
-<li><a href="http://www.minjs.com/
-">http://www.minjs.com/
-</a></li>
-<li><a href="http://www.domcharts.com/
-">http://www.domcharts.com/
-</a></li>
-
-          </ul>
-        </li>
-        <li class="dropdown">
-          <a href="" class="dropdown-toggle" data-toggle="dropdown">About <b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a href="mailto:jekor@jekor.com">jekor@jekor.com</a></li>
-            <li><a href="/resume">Résumé</a></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-
-    <article>
-      <h1>gressgraph - Visualize Your iptables Firewall</h1>
-      <style type="text/css">
+<style type="text/css">
     body {
       width: 66em;
       margin-left: auto;
@@ -75,26 +18,29 @@
     }
 </style>
 
-<p>gressgraph produces a graph of your iptables ruleset using <a href="Graphviz">http://graphviz.org/</a>. You can use the graph to:</p>
-<ul>
-<li>Look for vulnerabilities or redundancies.</li>
-<li>Get a <q>feel</q> for a network.</li>
-<li>Showcase your firewall.</li>
-</ul>
-<section class="level2" id="try-it-out">
-<h2>Try It Out</h2>
-<p>Enter the output of <code>iptables -L -vx</code> here.</p>
+gressgraph produces a graph of your iptables ruleset using [http://graphviz.org/](Graphviz). You can use the graph to:
+
+ - Look for vulnerabilities or redundancies.
+ - Get a "feel" for a network.
+ - Showcase your firewall.
+
+## Try It Out
+
+Enter the output of `iptables -L -vx` here.
+
 <form id="graph" style="text-align: center">
-  
-<textarea name="chains" rows="24" cols="120" required></textarea><br/><br/> <input type="submit" value="Graph It"/>
+  <textarea name="chains" rows="24" cols="120" required></textarea><br/><br/>
+  <input type="submit" value="Graph It"/>
 </form>
 
 <a><img id="output"></a>
-</section>
-<section class="level2" id="about">
-<h2>About</h2>
-<p>I’ve deliberately kept the program simple. It has no commandline options.</p>
-<p>I haven’t tested gressgraph on many networks. I’m collecting each example that’s submitted through this form to help improve the output for more networks.</p>
+
+## About
+
+I've deliberately kept the program simple. It has no commandline options.
+
+I haven't tested gressgraph on many networks. I'm collecting each example that's submitted through this form to help improve the output for more networks.
+
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script type="text/javascript">
 $(function () {
@@ -115,30 +61,3 @@ $(function () {
   });
 });
 </script>
-
-
-</section>
-
-    </article>
-    <footer>
-      <div class="container">
-        <p>Copyright 2008, 2012 Chris Forno</p>
-      </div>
-    </footer>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-    <script src="/script/bootstrap"></script>
-    <script type="text/javascript">
-      var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-73938-3']);
-_gaq.push(['_trackPageview']);
-
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-
-    </script>
-  </body>
-</html>
-
