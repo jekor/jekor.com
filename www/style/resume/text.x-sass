@@ -4,7 +4,7 @@ body
   margin-right: auto
 
 h1
-  margin-top: 1em
+  margin-top: 2em
   text-align: center
   @media print
     margin-top: 0
