@@ -17,21 +17,18 @@ sync-test :
 var/sites.json : etc/sites
 	map "jw string | jw name url" < $< | jw array > $@
 
-.ONESHELL :
 www/text.html : www/articles/application.json var/sites.json template/front.html template/article-item.html template/site-item.html etc/analytics.js
-	tmp=$$(mktemp)
-	jw name articles < www/articles/application.json >> $$tmp
-	jw name sites < var/sites.json >> $$tmp
-	jw string < etc/analytics.js | jw name analytics >> $$tmp
-	jw merge < $$tmp | jigplate template/front.html template/article-item.html template/site-item.html > $@
-	rm $$tmp
+	cat \
+	<(jw name articles < www/articles/application.json) \
+	<(jw name sites < var/sites.json) \
+	<(jw string < etc/analytics.js | jw name analytics) \
+	| jw merge | jigplate template/front.html template/article-item.html template/site-item.html > $@
 
 var/nav.html : www/articles/application.json template/nav.html template/article-item.html template/site-item.html
-	tmp=$$(mktemp)
-	jw name articles < www/articles/application.json >> $$tmp
-	jw name sites < var/sites.json >> $$tmp
-	jw merge < $$tmp | jigplate template/nav.html template/article-item.html template/site-item.html > $@
-	rm $$tmp
+	cat \
+	<(jw name articles < www/articles/application.json) \
+	<(jw name sites < var/sites.json) \
+	| jw merge | jigplate template/nav.html template/article-item.html template/site-item.html > $@
 
 www/article/%/application.json : www/article/%/text.x-web-markdown
 # TODO: Get rid of name: it's redundant. (To do so requires altering the rule for www/article/%/text.html.)
@@ -40,11 +37,10 @@ www/article/%/application.json : www/article/%/text.x-web-markdown
 	rm metadata
 
 www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html template/nav.html etc/analytics.js var/nav.html
-	tmp=$$(mktemp)
-	jw string < etc/analytics.js | jw name analytics >> $$tmp
-	jw string < var/nav.html | jw name nav >> $$tmp
-	cat $< $$tmp | jw merge | jigplate template/article.html > $@
-	rm $$tmp
+	cat $< \
+	<(jw string < etc/analytics.js | jw name analytics) \
+	<(jw string < var/nav.html | jw name nav) \
+	| jw merge | jigplate template/article.html > $@
 
 www/articles :
 	mkdir $@
@@ -56,7 +52,10 @@ www/articles/feed :
 	mkdir $@
 
 www/articles/feed/application.rss+xml : www/articles/application.json template/rss-item.xml template/rss.xml www/articles/feed
-	cat $< | jw name items | cat - <(date -R | tr -d "\n" | jw string) | jw insert date | jigplate template/rss-item.xml template/rss.xml > $@
+	cat \
+	<(jw name items < $<) \
+	<(date -R | tr -d "\n" | jw string | jw name date) \
+	| jw merge | jigplate template/rss-item.xml template/rss.xml > $@
 
 www/article/%/comment/POST :
 	mkdir -p $$(dirname $@) && chmod 777 $$(dirname $@)
