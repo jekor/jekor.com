@@ -31,10 +31,11 @@ var/nav.html : www/articles/application.json template/nav.html template/article-
 	| jw merge | jigplate template/nav.html template/article-item.html template/site-item.html > $@
 
 www/article/%/application.json : www/article/%/text.x-web-markdown
-# TODO: Get rid of name: it's redundant. (To do so requires altering the rule for www/article/%/text.html.)
-	head -n 3 $< | cut -d' ' -f2- | cat <(echo -e "name\ntitle\nauthor\ndate") <(echo $$(basename $$(dirname $<))) - | jw ziplines > metadata
-	pandoc --smart --section-divs --mathjax -t html5 < $< | jw string | jw name body | cat metadata - | jw merge > $@
-	rm metadata
+	cat \
+	<(cat <(echo -e "title\nauthor\ndate") <(head -n 3 $< | cut -d' ' -f2-) | jw ziplines) \
+	<(echo $$(basename $$(dirname $<)) | jw string | jw name name) \
+	<(pandoc --smart --section-divs --mathjax -t html5 < $< | jw string | jw name body) \
+	| jw merge > $@
 
 www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html template/nav.html etc/analytics.js var/nav.html
 	cat $< \
