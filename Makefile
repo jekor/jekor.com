@@ -65,8 +65,10 @@ www/article/%/comment/POST :
 	mkdir -p $$(dirname $@) && chmod 777 $$(dirname $@)
 	ln -sf ../../../../bin/post-comment $@
 
+www/article/%/comments :
+	mkdir -p $@
+
 www/article/%/comments/application.json :
-	mkdir -p $$(basename $$(dirname $<))
 	echo "[]" > $@ && chmod 666 $@
 
 var/emails :
