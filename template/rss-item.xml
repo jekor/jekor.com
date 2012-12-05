@@ -1,7 +1,0 @@
-<item>
-  <title>{title}</title>
-  <link>http://jekor.com/article/{name}</link>
-  <pubDate>{date}</pubDate>
-  <author>jekor@jekor.com (Chris Forno)</author>
-  <!-- {copyright} -->
-</item>

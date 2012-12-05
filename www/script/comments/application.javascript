@@ -83,9 +83,8 @@
   $(function () {
     // Load comments on this article.
     $.get(window.location.pathname + '/comments')
-     .fail(function (xhr) {console.log(xhr);})
      .done(function (comments) {
-       $('#article-comments').append('<h2>Comments</h2>').append(renderComments(comments)).append(renderCommentBox(''));
+       $('#comments').append('<h2>Comments</h2>').append(renderComments(comments)).append(renderCommentBox(''));
      });
   });
 })(jQuery);
