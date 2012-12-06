@@ -1,0 +1,69 @@
+% Every Program Should Have a Philosophy
+% Chris Forno (jekor)
+% 2012-07-31 16:07:00 -0700
+
+Why are some programs seemingly timeless? Why haven't they yet been replaced by newer software? What keeps drawing users to use them and developers to develop them further?
+
+My hypothesis: Every program that has stood the test of time has had a unique philosophy. Its author had a very opinionated view about the best way to solve a particular problem. This philosophy has made the program stand out and attracted a loyal base.
+
+## Mediocre Software Abounds
+
+In my time administering servers and services, I've evaluated a lot of programs. I can't remember how many times I've read about and/or tried out every program listed in a category on Freshmeat[^1]. It felt like for every 1 program with a philosophy there were 99 other mediocre me-too programs attempting to solve the same problem, but aimlessly.
+
+## A Philosophy Takes Time to Build
+
+It's not surprising that so much mediocre software exists. A lot of programs are written to scratch an itch or to solve the author's particular problem.
+
+## Examples
+
+### Unix (1969)
+
+While not a single program, Unix is perhaps the most well-known software having a well-defined philosophy: use a collection of programs that do one thing and do it well.
+
+### Emacs (1976)
+
+While no longer a unique philosophy, Emacs was written to have a small but extensible core. Those extensions have kept it alive to this day.
+
+### TeX (1978)
+
+It's amazing that so much is still published with TeX. While much of TeX's success can be attributed to its lack of bugs and a thriving ecosystem of extensions, the core typesetting philosophies[^2] that went into it (especially for mathematics typesetting) have yet to be matched by any contemporary system.
+
+### qmail (1995)
+
+How has a program released under a license that required package maintainers to jump through hoops distributing it with a series of patches survived and thrived?[^3] It's because people were so desparate to use it due to its security and Unix-style philosophy.
+
+## Counterexamples
+
+It's difficult to come up with counterexamples because by my definition such software would be mediocre and unmemorable. Even bad software with a philosophy is at least memorable (e.g. Clippy).
+
+How many "enterprise" software systems have you dreaded having to work with? The odds are that there was no unifying/polarizing philosophy behind them.
+
+## Polarizing Users Is a Good Thing
+
+There are many ongoing holy wars between users of software. These are great places to find examples of software with philosophies.
+
+One of the most well-known among developers is Emacs/Vi. As a long-time user of both[^4], I know that they each have their strengths and weaknesses for different users. The same holy war has existed between users of GUI programs and command-line ones.
+
+The reason that software holy wars continue to rage is just that: neither option is demonstrably inferior to the other in all circumstances. They just have a clash of philosophies.
+
+## Software Reuse
+
+The Object-Oriented Programming movement had a rallying cry in its early days: "Build reusable software components!"[^5]. But software reuse remains elusive and mythical. Why do so many libraries accumulate to do the same thing? Wouldn't effort be more efficiently expended on making just 1 library really good? Why do developers feel the need to reimplement existing software and libraries?
+
+I used to think that reuse didn't work due to some technical limitation with our tools. Maybe our programming languages weren't expressive enough[^6]. But I now believe that we reimplement software because the existing software is at odds with our philosophy of how the problem should be solved.
+
+<!-- Link to another article on software reuse, and how I don't think it's a worthy goal. -->
+
+## Footnotes
+
+[^1]:  Freshmeat has since changed its name to Freecode.
+
+[^2]:  TeX is actually full of a broad variety of philosophies, thanks to Knuth being an opinionated perfectionist.
+
+[^3]:  qmail has since been released into the public domain.
+
+[^4]:  I used Vim exclusively for 9 years before switching to Emacs for the past 6.
+
+[^5]:  Whether OOP ever delivered on this promise is the subject of many other articles.
+
+[^6]:  In fact, this reuse problem is amplified by lack of reuse of software development tools themselves. You can watch entire segments of the industry jump to new programming languages each decade. And there's no clear indication that the new language is better or that the existing language couldn't be improved more easily, just that the new language is different.
