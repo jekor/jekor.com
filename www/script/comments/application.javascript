@@ -84,7 +84,7 @@
     // Load comments on this article.
     $.get(window.location.pathname + '/comments')
      .done(function (comments) {
-       $('#comments').append('<h2>Comments</h2>').append(renderComments(comments)).append(renderCommentBox(''));
+       $('#reader-comments').append('<h2>Comments</h2>').append(renderComments(comments)).append(renderCommentBox(''));
      });
   });
 })(jQuery);
