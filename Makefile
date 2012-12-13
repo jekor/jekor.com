@@ -114,6 +114,13 @@ var/emails :
 	mkdir -p var
 	echo "{}" > $@ && chmod 666 $@
 
+www/resume/application.json : www/resume/text.x-web-markdown
+	cat \
+	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
+	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name articleName) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
+	| jw merge > $@
+
 www/resume/text.html : www/resume/application.json template/resume.html etc/analytics.js
 	cat $< \
 	<(jw string < etc/analytics.js | jw name analytics) \
