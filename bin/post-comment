@@ -54,9 +54,9 @@ done
 # Don't put code below here unless it needs to execute as the same directory as
 # what we traversed to above.
 
-find -name "application.json" > tmp-comments
-map 'chop / 2..-2 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
-xargs cat < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
+find . -depth -type d | head -n -1 | tac > tmp-comments
+map 'chop / 2..-1 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
+xargs -I '{}' cat '{}'/application.json < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
 rm tmp-comments tmp-paths
 
 echo $id
