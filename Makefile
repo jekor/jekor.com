@@ -3,7 +3,7 @@ sasses := $(shell find www -name "text.x-sass")
 markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 stories := $(shell find www/story -name "text.x-web-markdown")
-sync_options := -avz bin etc var www --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
+sync_options := -avz bin etc var www --include www/script/comments/application.javascript --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
 
 # TODO: Make rsync copy www/script/comments/application.json which is currently being blocked by --exclude comments/*
 
