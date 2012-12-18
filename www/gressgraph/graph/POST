@@ -19,6 +19,7 @@ if [ ! -e $id ]; then
     mv $input $id/text.plain
     gressgraph < $id/text.plain > $id/vnd.graphviz
     twopi -Tsvg $id/vnd.graphviz > $id/image.svg+xml
+    ln -s image.svg+xml $id/GET
 fi
 
 rm $input

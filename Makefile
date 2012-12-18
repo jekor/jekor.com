@@ -3,7 +3,7 @@ sasses := $(shell find www -name "text.x-sass")
 markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 stories := $(shell find www/story -name "text.x-web-markdown")
-sync_options := -avz bin etc var www --include www/script/comments/application.javascript --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
+sync_options := -avz bin etc var www --include www/script/comments/application.javascript --include www/gressgraph/graph/POST --exclude comment/* --exclude comments/* --exclude var/* --exclude graph/* jekor.com:jekor.com/
 
 # TODO: Make rsync copy www/script/comments/application.json which is currently being blocked by --exclude comments/*
 
@@ -41,6 +41,13 @@ www/%/text.html : www/%/application.json template/page.html etc/analytics.js var
 	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/page.html > $@
+
+www/gressgraph/application.json : www/gressgraph/text.x-web-markdown
+	cat \
+	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
+	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name articleName) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
+	| jw merge > $@
 
 www/article/%/application.json : www/article/%/text.x-web-markdown
 	cat \
