@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/bin"
 export LC_CTYPE=en_US.UTF-8
 
-input=$(mktemp)
+input=$(mktemp -t iptable)
 chmod go+r $input
 
 cat > $input
@@ -11,7 +12,7 @@ cat > $input
 echo "" >> $input
 
 # The graph's ID will be the md5 hash of its chains.
-id=$(md5sum < $input | cut -d' ' -f1)
+id=$(md5 -q < $input)
 
 # Generate output, but only if this example hasn't been posted before.
 if [ ! -e $id ]; then

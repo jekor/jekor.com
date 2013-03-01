@@ -21,7 +21,7 @@ sync-test :
 var/sites.json : etc/sites
 	map "jw string | jw name url" < $< | jw array > $@
 
-www/text.html : www/articles/application.json www/stories/application.json var/sites.json template/front.html template/article-item.html template/story-item.html template/site-item.html etc/analytics.js
+www/text.html : www/articles/application.json www/stories/application.json var/sites.json template/front.html template/article-item.html template/story-item.html template/site-item.html etc/analytics.js var/latest-video.html
 	cat \
 	<(jw name articles < www/articles/application.json) \
 	<(jw name stories < www/stories/application.json) \

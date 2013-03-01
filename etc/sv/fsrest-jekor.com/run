@@ -1,2 +1,2 @@
 #!/bin/sh
-exec chpst -uhttp:http fsrest /home/jekor/jekor.com/www 10035 2>&1
+exec chpst -uwww:www /usr/local/bin/fsrest /home/jekor/jekor.com/www 10035 2>&1

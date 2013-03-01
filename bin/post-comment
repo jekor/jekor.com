@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/bin"
 export LC_CTYPE=en_US.UTF-8
 top=$(cd $(dirname $(readlink ${BASH_SOURCE[0]}))/.. && pwd)
 
-comment=$(mktemp)
+comment=$(mktemp -t comment)
 
 cat | jw normalize > $comment
 if [ $? -ne 0 ]; then
@@ -19,7 +20,7 @@ if jw lookup body < $comment | egrep -q '^(null|"\s*")$'; then
 fi
 
 # The comment's ID will be the md5 hash of its body.
-id=$(jw lookup body < $comment | md5sum | cut -d' ' -f1)
+id=$(jw lookup body < $comment | md5 -q)
 
 # Make sure that this comment hasn't already been posted.
 if [ -e "$id" ]; then
@@ -33,9 +34,12 @@ mkdir "$id"
 # the public; that would be irresponsible. Instead, store the email address in
 # a safe place and store an md5 hash of the email address instead (useful for
 # avatars and such).
-email=$(cat $comment | jw lookup email | jw unstring)
-hash=$(echo -n $email | md5sum | cut -d' ' -f1 | tr -d "\n")
-echo -e "$hash\n$email" | jw ziplines | cat - $top/var/emails | jw merge > $top/var/emails
+email=$(cat $comment | jw lookup email)
+if [ $email != "null" ]; then
+    email=$(echo $email | jw unstring)
+    hash=$(echo -n $email | md5 -q | tr -d "\n")
+    echo -e "$hash\n$email" | jw ziplines | cat - $top/var/emails | jw merge > $top/var/emails
+fi
 # Add a timestamp while we're at it.
 echo -n $hash | jw string | jw name emailhash | cat $comment - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
 rm $comment
@@ -54,7 +58,7 @@ done
 # Don't put code below here unless it needs to execute as the same directory as
 # what we traversed to above.
 
-find . -depth -type d | head -n -1 | tac > tmp-comments
+find . -depth -mindepth 1 -type d | tail -r > tmp-comments
 map 'chop / 2..-1 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
 xargs -I '{}' cat '{}'/application.json < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
 rm tmp-comments tmp-paths

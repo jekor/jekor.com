@@ -13,3 +13,9 @@ section
   text-align: left
   margin-left: 1em
   margin-right: 1em
+
+section#video
+  clear: both
+  float: none
+  text-align: center
+  padding-top: 1em
