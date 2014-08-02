@@ -1,5 +1,4 @@
-SHELL := /bin/bash
-sasses := $(shell find www -name "text.x-sass")
+SHELL := $(bash)/bin/bash
 markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 stories := $(shell find www/story -name "text.x-web-markdown")
@@ -7,16 +6,13 @@ sync_options := -avz bin etc var www --include www/script/comments/application.j
 
 # TODO: Make rsync copy www/script/comments/application.json which is currently being blocked by --exclude comments/*
 
-all : www/text.html $(sasses:x-sass=css) $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml $(stories:text.x-web-markdown=comment/POST) $(stories:text.x-web-markdown=comments) $(stories:text.x-web-markdown=comments/application.json) www/stories/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json www/gressgraph/text.html
+all : www/text.html $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml $(stories:text.x-web-markdown=comment/POST) $(stories:text.x-web-markdown=comments) $(stories:text.x-web-markdown=comments/application.json) www/stories/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json www/gressgraph/text.html
 
 sync :
 	rsync $(sync_options)
 
 sync-test :
 	rsync --dry-run $(sync_options)
-
-%text.css : %text.x-sass
-	sass $< > $@
 
 var/sites.json : etc/sites
 	map "jw string | jw name url" < $< | jw array > $@
@@ -65,6 +61,9 @@ www/article/%/text.html : www/article/%/application.json www/articles/applicatio
 www/articles/application.json : $(articles:text.x-web-markdown=application.json)
 	mkdir -p www/articles
 	cat $^ | paste <(cat $^ | map jw lookup date) - | sort -r | cut -f2 | jw array > $@
+
+www/%/feed :
+	mkdir -p $@
 
 www/articles/feed/application.rss+xml : www/articles/application.json template/rss-article-item.xml template/rss-articles.xml www/articles/feed
 	mkdir -p www/articles/feed

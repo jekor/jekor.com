@@ -1,2 +1,0 @@
-#!/bin/sh
-exec chpst -uwww:www /usr/local/bin/fsrest /home/jekor/jekor.com/www 10035 2>&1

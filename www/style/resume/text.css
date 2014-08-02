@@ -1,0 +1,72 @@
+body {
+  max-width: 60em;
+  margin-left: auto;
+  margin-right: auto; }
+
+h1 {
+  margin-top: 2em;
+  text-align: center; }
+  @media print {
+    h1 {
+      margin-top: 0;
+      margin-bottom: 0.5em;
+      float: left;
+      text-align: left;
+      font-size: 36pt; } }
+
+#hyperlinks {
+  text-align: center;
+  margin-top: 1em;
+  margin-bottom: 1em; }
+  #hyperlinks a {
+    margin-left: 1em;
+    margin-right: 1em; }
+
+h3 {
+  line-height: 2.5em; }
+  h3 img {
+    height: 2.5em;
+    margin-right: 0.25em; }
+  h3 a {
+    margin-left: 0.25em;
+    margin-right: 0.25em; }
+  h3 .daterange {
+    float: right;
+    line-height: 2.5em; }
+  @media print {
+    h3 {
+      font-size: 12pt;
+      clear: both; } }
+
+.barchart td {
+  vertical-align: bottom; }
+
+#technologies {
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.5em; }
+  #technologies td, #technologies th {
+    padding: 0.2em; }
+  #technologies td {
+    height: 6em;
+    width: 1em; }
+    #technologies td div {
+      background-color: steelblue; }
+      #technologies td div:hover {
+        background-color: #ff9f27; }
+  @media print {
+    #technologies {
+      display: none; } }
+
+@page {
+  margin-top: 0.5in; }
+
+@media print {
+  code.url {
+    color: black;
+    background-color: white;
+    border: none; }
+
+  dt, dd {
+    font-size: 10pt; } }

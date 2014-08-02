@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export PATH="$PATH:/usr/local/bin"
-export LC_CTYPE=en_US.UTF-8
 
-input=$(mktemp -t iptable)
+set -e
+
+input=$(mktemp)
 chmod go+r $input
 
 cat > $input
@@ -12,15 +12,16 @@ cat > $input
 echo "" >> $input
 
 # The graph's ID will be the md5 hash of its chains.
-id=$(md5 -q < $input)
+id=$(md5sum $input | cut -d' ' -f1)
 
 # Generate output, but only if this example hasn't been posted before.
 if [ ! -e $id ]; then
-    mkdir $id
-    mv $input $id/text.plain
-    gressgraph < $id/text.plain > $id/vnd.graphviz
-    twopi -Tsvg $id/vnd.graphviz > $id/image.svg+xml
-    ln -s image.svg+xml $id/GET
+   chmod u+w .
+   mkdir $id
+   mv $input $id/text.plain
+   gressgraph < $id/text.plain > $id/vnd.graphviz
+   twopi -Tsvg $id/vnd.graphviz > $id/image.svg+xml
+   ln -s image.svg+xml $id/GET
 fi
 
 rm $input

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-export PATH="$PATH:/usr/local/bin"
-export LC_CTYPE=en_US.UTF-8
-top=$(cd $(dirname $(readlink ${BASH_SOURCE[0]}))/.. && pwd)
 
-comment=$(mktemp -t comment)
+set -e
+
+comment=$(mktemp)
 
 cat | jw normalize > $comment
 if [ $? -ne 0 ]; then
@@ -20,7 +19,7 @@ if jw lookup body < $comment | egrep -q '^(null|"\s*")$'; then
 fi
 
 # The comment's ID will be the md5 hash of its body.
-id=$(jw lookup body < $comment | md5 -q)
+id=$(jw lookup body < $comment | md5sum | cut -d' ' -f1)
 
 # Make sure that this comment hasn't already been posted.
 if [ -e "$id" ]; then
@@ -28,6 +27,9 @@ if [ -e "$id" ]; then
     echo "Duplicate comment body."
     exit 1
 fi
+# This might seem a bit strange, but is required due to the unionfs mount over a
+# read-only filesystem.
+chmod u+w .
 mkdir "$id"
 
 # Don't let the email address touch the filesystem in a place that's served to
@@ -38,7 +40,7 @@ email=$(cat $comment | jw lookup email)
 if [ $email != "null" ]; then
     email=$(echo $email | jw unstring)
     hash=$(echo -n $email | md5 -q | tr -d "\n")
-    echo -e "$hash\n$email" | jw ziplines | cat - $top/var/emails | jw merge > $top/var/emails
+    echo -e "$hash\n$email" | jw ziplines | cat - $toplevel/var/emails | jw merge > $toplevel/var/emails
 fi
 # Add a timestamp while we're at it.
 echo -n $hash | jw string | jw name emailhash | cat $comment - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
@@ -55,11 +57,12 @@ until [[ $(basename $(pwd)) == "comment" ]]; do
     cd ..
 done
 
-# Don't put code below here unless it needs to execute as the same directory as
+# Don't put code below here unless it needs to execute in the same directory as
 # what we traversed to above.
 
-find . -depth -mindepth 1 -type d | tail -r > tmp-comments
+find . -depth -mindepth 1 -type d | tac > tmp-comments
 map 'chop / 2..-1 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
+chmod u+w ../comments ../comments/application.json
 xargs -I '{}' cat '{}'/application.json < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
 rm tmp-comments tmp-paths
 
