@@ -1,7 +1,32 @@
 % What Gets Documented Gets Improved
 % Chris Forno (jekor)
 % 2009-01-12 00:00:00 -0700
-% Copyright 2009, 2012 Chris Forno
+% Copyright 2009, 2012, 2013 Chris Forno
+
+<style type="text/css">
+article figure img {width: 50%}
+article figure figcaption {display: none}
+article table {margin-left: auto; margin-right: auto}
+article table th, td {border-left: 1px solid black; border-bottom: 1px solid black; text-align: center !important; padding: 0.25em 0.5em;}
+article table th:nth-child(1), td:nth-child(1) {border-left: none; text-align: right !important;}
+</style>
+
+<!-- Haddock style syntax highlighting from Pandoc examples -->
+<style type="text/css">
+code{white-space: pre;}
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #0000ff; }
+code > span.ch { color: #008080; }
+code > span.st { color: #008080; }
+code > span.co { color: #008000; }
+code > span.ot { color: #ff4000; }
+code > span.al { color: #ff0000; }
+code > span.er { font-weight: bold; }
+</style>
 
 I used to edit my .emacs[^1] directly. One day I decided to convert it into a literate program[^2]. So over the course of a week I went about extracting chunks of code, documenting them, and rearranging them.
 
@@ -26,40 +51,96 @@ But in order to achieve revolutionary improvements in code, we need insight. We 
 
 ## The 3 Layers of Program Documentation
 
-![Documentation Pyramid](/image/documentation-pyramid)
+![Documentation Pyramid](/image/documentation-layers)
 
-<!-- [[what-gets-documented-gets-improved.files/documentation-pyramid.png]]
+               narrative                top-level           external
+------------   --------------           ---------------     --------------
+**location**   source code              source/external     external file
+**level**      intra-function           inter-function      super-function
+**style**      novel                    reference book      map
+**time**       during                   after               before/after
+**targets**    statements/expressions   functions/modules   relationships
 
-     |          | comments     | literate text           | book           |
-     |----------+--------------+-------------------------+----------------|
-     | **detail**   | function     | inter-function          | super-function |
-     | **location** | source file  | source file             | external file  |
+### Narrative
 
--->
+The narrative is made up of the comments that exist between (or in) lines of code. In the diagram they're in the center and have the largest area because I think they're the most important and should be the most numerous. They're important because they are the most difficult to reverse engineer later. They give you a glimpse into the mind of the author of the code---ideally at the time that they were writing it (even if that author is the you from the past).
 
-### Comments
+Narrative comments stand in contrast to top-level documentation which can be written later and even by other developers.
 
-We know we need comments. Most experienced programmers write them.
+Here's an example of some narrative documentation.
 
-Comments are the most detailed level of documentation. They deal with concepts smaller at the function level. They are probably also the most numerous and prevalent form of documentation. But on their own they're not enough.
+```haskell
+depUpToDate :: String -> IO Bool
+depUpToDate oldMD5 = catch
+      -- To avoid having to escape directory path separators (such as
+      -- converting / to !), each dependency is stored in a file named
+      -- by its MD5. e.g. a dependency named `redo.hs` with an MD5 of
+      -- 29e57f39b7ea2795ab2e452ada562778 and for the target `redo`
+      -- would be stored in the file
+      -- `.redo/redo/29e57f39b7ea2795ab2e452ada562778`. The contents of
+      -- the file would be the relative path to the dependency (in this
+      -- case, simply "redo.hs").
+  (do dep <- withFile (metaDir </> target </> oldMD5) ReadMode hGetLine
+      newMD5 <- fileMD5 dep
+      doScript <- doPath dep
+      case doScript of
+        -- Simple dependencies are up-to-date if their MD5s match that
+        -- of the last time that they were checked.
+        Nothing -> return $ oldMD5 == newMD5
+        -- But a dependency can itself depend on other files, so aside
+        -- from just having their MD5s match between runs, all of their
+        -- dependencies must also be up-to-date.
+        Just _ -> do upToDate' <- upToDate dep
+                     return $ (oldMD5 == newMD5) && upToDate')
+  -- If the target metadata directory (e.g. `.redo/redo`) doesn't exist
+  -- (for example, on the first run of redo), we trap the IO exception
+  -- and just indicate that the target is out-of-date.
+  -- TODO: The way this is written, it looks as if it would say that the
+  -- target /is/ up-to-date if the metadata directory is missing, which
+  -- would be wrong.
+  (\e -> return (ioeGetErrorType e == InappropriateType))
+```
 
-### Literate Text
+Narrative comments share similarities with literate programming: both are best
+written as the code is being written and both encourage you to put more
+emphasis on the text than the code. Where narrative comments differ from
+literate programming is that they are not designed to be nicely formatted and
+they are inline in the code.
 
-Literate text wraps and contextualizes the comments and the blocks of code that they inhabit. It explains the connections and relationships between blocks. It's the glue between paragraphs[^6].
+<!-- With a team of programmers, the narrative can be like collaborative fiction -->
+<!-- (except hopefully not actually fiction). -->
 
-Good literate text is a narrative. It explains concepts as they come along in the natural flow of the program.
+### Top-Level
 
-Literate text does not require a literate programming tool. They can be written in normal comment blocks in the source of the program. What distinguishes them from comments is that they don't directly refer to a piece of code (such as a function declaration of line of code).
+Top-level documentation describes how to use all of the "black boxes" (functions, modules, interfaces, etc.) in the code. While top-level documentation can be written as you're writing the code, I find that it's better to wait until afterwards. This saves wasting time if you decide to scrap or change a function, and it helps gives yourself a little distance from the code to better put yourself in another developer's (or your future self's) shoes.
 
-Literate text will naturally arise, especially from programmers who make regular use of comments.
+Here's an example of a top-level block of documentation. Note that in this case
+the documentation could be quite easily derived by reading the source for the
+function.
 
-### Handbook
+```haskell
+-- | Calculate the MD5 checksum of a file.
+--
+-- For example:
+--
+-- >>> fileMD5 "redo.hs"
+-- "29e57f39b7ea2795ab2e452ada562778"
+fileMD5 :: FilePath   -- ^ the file to calculate the checksum of
+        -> IO String  -- ^ a 32-character MD5 checksum
+fileMD5 path = (show . MD5.md5) `liftM` BL.readFile path
+```
 
-While comments and literate text both serve to document the thought process or mental model of the code, the handbook should step back and explain how to get things done.
+Examples, such as the one in the code above, provide valuable context and make it easier to understand how to use each component at a glance.
 
-Think of the handbook for your program as a guide for new programmers---or yourself once you've been away from the code for too long. It provides a map, an overview of the territory that the program covers.
+### External
 
-A handbook can have HOWTOs, FAQs, tutorials. Instead of explaining the inner workings of the code, it should explain how different pieces fit together. It should explain the overall philosophy of the program and the purpose for each component.
+External documentation should explain the code at a high level. It should act as a map of the layout of the code and explain the relationships between the "black boxes" from the top-level documentation. Instead of explaining the inner workings of the code, it should explain how different pieces fit together. It should explain the overall philosophy of the program and the purpose for each component.
+
+External documentation is unique in that it can be written before any code is written (although the majority is probably written after). It can also be witten by someone else and probably should at least be reviewed by someone other than the author of the code.
+
+While narrative and top-level comments both serve to document the thought process or mental model of the code, the external documentation should step back and explain how to get things done. Think of the external documentation for your program as a guide for new developers---or yourself once you've been away from the code for too long. It can contain HOWTOs, FAQs, and tutorials.
+
+External documentation can take the form of a README file, a wiki, or a handbook. There is usually some overlap between external documentation and end-user documentation. A README for a program can provide valuable insight into the intended behavior of a program. But for anything beyond a small program, end-user documentation is no substitude for developer-focused external documentation.
 
 ## But What About Self-Documenting Code?
 
@@ -104,5 +185,3 @@ It's like having a clean bedroom. When you've cleaned your room you're more aler
 [^4]:  There's nothing wrong with incremental change as long as it's positive overall. Unfortunately, making changes to code without a gestalt knowledge of the code, will often produce a positive change in 1 vector (e.g. fixing a bug) while producing a negative change in others (e.g. introducing more bugs, making the code more complex, or introducing brittle assumptions or coupling).
 
 [^5]:  See the studies of chess masters conducted by [Alfred Binet](http://en.wikipedia.org/wiki/Alfred_Binet).
-
-[^6]:  If you're a TeXnician, it can help to think of it as glue.
