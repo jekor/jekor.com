@@ -123,7 +123,3 @@ www/resume/text.html : www/resume/application.json template/resume.html etc/anal
 	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/resume.html > $@
-
-www/script/domcharts/bar/application.json :
-	mkdir -p www/script/domcharts/bar
-	wget https://raw.github.com/jekor/domcharts/master/bar.js -O $@
