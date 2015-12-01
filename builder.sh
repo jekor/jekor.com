@@ -1,6 +1,5 @@
 source $stdenv/setup
 
-env
 cp -r $src src
 chmod -R u+w src
 pushd src
