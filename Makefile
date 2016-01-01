@@ -65,7 +65,7 @@ www/articles/feed/application.rss+xml : www/articles/application.json template/r
 
 www/article/%/comment/POST :
 	mkdir -p $$(dirname $@) && chmod 777 $$(dirname $@)
-	ln -sf ../../../../bin/post-comment $@
+	ln -sf ../../../post-comment $@
 
 www/article/%/comments :
 	mkdir -p $@

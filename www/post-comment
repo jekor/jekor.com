@@ -32,15 +32,11 @@ fi
 chmod u+w .
 mkdir "$id"
 
-# Don't let the email address touch the filesystem in a place that's served to
-# the public; that would be irresponsible. Instead, store the email address in
-# a safe place and store an md5 hash of the email address instead (useful for
-# avatars and such).
+# Don't store the email address, just the gravatar hash.
 email=$(cat $comment | jw lookup email)
 if [ $email != "null" ]; then
     email=$(echo $email | jw unstring)
-    hash=$(echo -n $email | md5 -q | tr -d "\n")
-    echo -e "$hash\n$email" | jw ziplines | cat - $toplevel/var/emails | jw merge > $toplevel/var/emails
+    hash=$(echo -n $email | md5sum | cut -d' ' -f1)
 fi
 # Add a timestamp while we're at it.
 echo -n $hash | jw string | jw name emailhash | cat $comment - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
