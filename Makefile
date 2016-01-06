@@ -8,12 +8,11 @@ all : www/text.html $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-mark
 var/sites.json : etc/sites
 	map "jw string | jw name url" < $< | jw array > $@
 
-www/text.html : www/articles/application.json www/stories/application.json var/sites.json template/front.html template/article-item.html template/story-item.html template/site-item.html etc/analytics.js var/latest-video.html
+www/text.html : www/articles/application.json www/stories/application.json var/sites.json template/front.html template/article-item.html template/story-item.html template/site-item.html var/latest-video.html
 	cat \
 	<(jw name articles < www/articles/application.json) \
 	<(jw name stories < www/stories/application.json) \
 	<(jw name sites < var/sites.json) \
-	<(jw string < etc/analytics.js | jw name analytics) \
 	| jw merge | jigplate template/front.html template/article-item.html template/story-item.html template/site-item.html > $@
 
 var/nav.html : www/articles/application.json template/nav.html template/article-item.html template/story-item.html template/site-item.html
@@ -23,9 +22,8 @@ var/nav.html : www/articles/application.json template/nav.html template/article-
 	<(jw name sites < var/sites.json) \
 	| jw merge | jigplate template/nav.html template/article-item.html template/story-item.html template/site-item.html > $@
 
-www/%/text.html : www/%/application.json template/page.html etc/analytics.js var/nav.html
+www/%/text.html : www/%/application.json template/page.html var/nav.html
 	cat $< \
-	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/page.html > $@
 
@@ -43,9 +41,8 @@ www/article/%/application.json : www/article/%/text.x-web-markdown
 	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
-www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html etc/analytics.js var/nav.html
+www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html var/nav.html
 	cat $< \
-	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/article.html > $@
 
@@ -80,9 +77,8 @@ www/story/%/application.json : www/story/%/text.x-web-markdown
 	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
-www/story/%/text.html : www/story/%/application.json www/stories/application.json template/story.html template/story-item.html etc/analytics.js var/nav.html
+www/story/%/text.html : www/story/%/application.json www/stories/application.json template/story.html template/story-item.html var/nav.html
 	cat $< \
-	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/story.html > $@
 
@@ -118,8 +114,7 @@ www/resume/application.json : www/resume/text.x-web-markdown
 	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
-www/resume/text.html : www/resume/application.json template/resume.html etc/analytics.js
+www/resume/text.html : www/resume/application.json template/resume.html
 	cat $< \
-	<(jw string < etc/analytics.js | jw name analytics) \
 	<(jw string < var/nav.html | jw name nav) \
 	| jw merge | jigplate template/resume.html > $@
