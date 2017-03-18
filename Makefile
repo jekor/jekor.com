@@ -3,7 +3,7 @@ markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 stories := $(shell find www/story -name "text.x-web-markdown")
 
-all : www/text.html $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml $(stories:text.x-web-markdown=comment/POST) $(stories:text.x-web-markdown=comments) $(stories:text.x-web-markdown=comments/application.json) www/stories/feed/application.rss+xml var/emails www/resume/text.html www/script/domcharts/bar/application.json www/gressgraph/text.html
+all : www/text.html $(markdowns:x-web-markdown=html) $(markdowns:text.x-web-markdown=application.json) $(articles:text.x-web-markdown=comment/POST) $(articles:text.x-web-markdown=comments) $(articles:text.x-web-markdown=comments/application.json) www/articles/feed/application.rss+xml $(stories:text.x-web-markdown=comment/POST) $(stories:text.x-web-markdown=comments) $(stories:text.x-web-markdown=comments/application.json) www/stories/feed/application.rss+xml var/emails www/script/domcharts/bar/application.json www/gressgraph/text.html
 
 var/sites.json : etc/sites
 	map "jw string | jw name url" < $< | jw array > $@
@@ -106,15 +106,3 @@ www/story/%/comments/application.json :
 var/emails :
 	mkdir -p var
 	echo "{}" > $@ && chmod 666 $@
-
-www/resume/application.json : www/resume/text.x-web-markdown
-	cat \
-	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
-	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name articleName) \
-	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
-	| jw merge > $@
-
-www/resume/text.html : www/resume/application.json template/resume.html
-	cat $< \
-	<(jw string < var/nav.html | jw name nav) \
-	| jw merge | jigplate template/resume.html > $@
