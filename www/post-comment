@@ -56,7 +56,16 @@ done
 # Don't put code below here unless it needs to execute in the same directory as
 # what we traversed to above.
 
-find . -depth -mindepth 1 -type d | tac > tmp-comments
+find_sorted_comments() {
+  for d in $(find . -mindepth 2 -maxdepth 2 -name application.json -printf "%T@ %h\n" | sort -r | chop ' ' 2 | chop '/' 2..-1); do
+    echo $1/$d
+    cd $d
+    find_sorted_comments $1/$d
+    cd ..
+  done
+}
+
+find_sorted_comments . > tmp-comments
 map 'chop / 2..-1 | tr -d "\n" | jw string | jw name path' < tmp-comments > tmp-paths
 chmod u+w ../comments ../comments/application.json
 xargs -I '{}' cat '{}'/application.json < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
