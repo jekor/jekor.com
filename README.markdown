@@ -10,7 +10,7 @@ Most content is generated from markdown files and HTML templates by a Makefile d
 
 ## Dynamic Content
 
-The primary dynamic content is user comments. These are handled by the `bin/post-comment` program.
+The primary dynamic content is user comments. These are handled by the `www/post-comment` program.
 
 Additionally, jekor.com hosts a copy of the [gressgraph](https://github.com/jekor/gressgraph) program so that users don't have to install it. Uploads are handled by `www/gressgraph/graph/POST`.
 
