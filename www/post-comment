@@ -4,28 +4,27 @@ set -e
 
 comment=$(mktemp)
 
-cat | jw normalize > $comment
-if [ $? -ne 0 ]; then
-    rm $comment
-    echo "Comment must be posted as JSON data."
-    exit 1
+if ! cat | jw normalize > "$comment"; then
+  rm "$comment"
+  echo "Comment must be posted as JSON data."
+  exit 1
 fi
 
 # Check that the body is non-empty.
-if jw lookup body < $comment | egrep -q '^(null|"\s*")$'; then
-    rm $comment
-    echo "Missing body."
-    exit 1
+if jw lookup body < "$comment" | grep -E -q '^(null|"\s*")$'; then
+  rm "$comment"
+  echo "Missing body."
+  exit 1
 fi
 
 # The comment's ID will be the md5 hash of its body.
-id=$(jw lookup body < $comment | md5sum | cut -d' ' -f1)
+id=$(jw lookup body < "$comment" | md5sum | cut -d' ' -f1)
 
 # Make sure that this comment hasn't already been posted.
 if [ -e "$id" ]; then
-    rm $comment
-    echo "Duplicate comment body."
-    exit 1
+  rm "$comment"
+  echo "Duplicate comment body."
+  exit 1
 fi
 # This might seem a bit strange, but is required due to the unionfs mount over a
 # read-only filesystem.
@@ -33,24 +32,24 @@ chmod u+w .
 mkdir "$id"
 
 # Don't store the email address, just the gravatar hash.
-email=$(cat $comment | jw lookup email)
-if [ $email != "null" ]; then
-    email=$(echo $email | jw unstring)
-    hash=$(echo -n $email | md5sum | cut -d' ' -f1)
+email=$(jw lookup email < "$comment")
+if [ "$email" != "null" ]; then
+  email=$(echo "$email" | jw unstring)
+  hash=$(echo -n "$email" | md5sum | cut -d' ' -f1)
 fi
 # Add a timestamp while we're at it.
-echo -n $hash | jw string | jw name emailhash | cat $comment - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
-rm $comment
+echo -n "$hash" | jw string | jw name emailhash | cat "$comment" - <(date +"%s" | jw name time) | jw merge | jw drop email > "$id/application.json"
+rm "$comment"
 
 # Setup a symlink to POST for adding replies.
-ln -s ../$(readlink POST) "$id/POST"
+ln -s "../$(readlink POST)" "$id/POST"
 
 # Update the aggregation of comments.
 # Figure out which item we're posting a comment to. It's pretty easy, just work
 # back up the directory tree until we find "comment".
 
-until [[ $(basename $(pwd)) == "comment" ]]; do
-    cd ..
+until [[ $(basename "$(pwd)") == "comment" ]]; do
+  cd ..
 done
 
 # Don't put code below here unless it needs to execute in the same directory as
@@ -58,9 +57,9 @@ done
 
 find_sorted_comments() {
   for d in $(find . -mindepth 2 -maxdepth 2 -name application.json -printf "%T@ %h\n" | sort -r | chop ' ' 2 | chop '/' 2..-1); do
-    echo $1/$d
-    cd $d
-    find_sorted_comments $1/$d
+    echo "$1/$d"
+    cd "$d"
+    find_sorted_comments "$1/$d"
     cd ..
   done
 }
@@ -71,4 +70,6 @@ chmod u+w ../comments ../comments/application.json
 xargs -I '{}' cat '{}'/application.json < tmp-comments | paste tmp-paths - | map jw merge | jw array > ../comments/application.json
 rm tmp-comments tmp-paths
 
-echo $id
+echo "201" >> "/dev/fd/$STATUS_FD"
+echo "Content-Type: text/plain" >> "/dev/fd/$HEADERS_FD"
+echo "$id"

@@ -3,27 +3,29 @@
 set -e
 
 input=$(mktemp)
-chmod go+r $input
+chmod go+r "$input"
 
-cat > $input
+cat > "$input"
 
 # The gressgraph parser is currently touchy about having a newline at the end
 # of the file. Make sure that one is there.
-echo "" >> $input
+echo "" >> "$input"
 
 # The graph's ID will be the md5 hash of its chains.
-id=$(md5sum $input | cut -d' ' -f1)
+id=$(md5sum "$input" | cut -d' ' -f1)
 
 # Generate output, but only if this example hasn't been posted before.
-if [ ! -e $id ]; then
+if [ ! -e "$id" ]; then
    chmod u+w .
-   mkdir $id
-   mv $input $id/text.plain
-   gressgraph < $id/text.plain > $id/vnd.graphviz
-   twopi -Tsvg $id/vnd.graphviz > $id/image.svg+xml
-   ln -s image.svg+xml $id/GET
+   mkdir "$id"
+   mv "$input" "$id/text.plain"
+   gressgraph < "$id/text.plain" > "$id/vnd.graphviz"
+   twopi -Tsvg "$id/vnd.graphviz" > "$id/image.svg+xml"
+   ln -s image.svg+xml "$id/GET"
 else
-  rm $input
+  rm "$input"
 fi
 
-echo -n $id
+echo "201" >> "/dev/fd/$STATUS_FD"
+echo "Content-Type: text/plain" >> "/dev/fd/$HEADERS_FD"
+echo -n "$id"

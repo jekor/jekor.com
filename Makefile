@@ -31,14 +31,14 @@ www/gressgraph/application.json : www/gressgraph/text.x-web-markdown
 	cat \
 	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
 	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name articleName) \
-	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --section-divs --mathjax -t html5+smart --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
 www/article/%/application.json : www/article/%/text.x-web-markdown
 	cat \
 	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
 	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name articleName) \
-	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --section-divs --mathjax -t html5+smart --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
 www/article/%/text.html : www/article/%/application.json www/articles/application.json template/article.html template/article-item.html var/nav.html
@@ -74,7 +74,7 @@ www/story/%/application.json : www/story/%/text.x-web-markdown
 	cat \
 	<(cat <(echo -e "title\nauthor\ndate\ncopyright") <(head -n 4 $< | cut -d' ' -f2-) | jw ziplines) \
 	<(echo $$(basename $$(dirname $<)) | tr -d "\n" | jw string | jw name storyName) \
-	<(cat $< | egrep -v '^% Copyright' | pandoc --smart --section-divs --mathjax -t html5 --email-obfuscation=none | jw string | jw name body) \
+	<(cat $< | egrep -v '^% Copyright' | pandoc --section-divs --mathjax -t html5+smart --email-obfuscation=none | jw string | jw name body) \
 	| jw merge > $@
 
 www/story/%/text.html : www/story/%/application.json www/stories/application.json template/story.html template/story-item.html var/nav.html
