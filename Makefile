@@ -1,4 +1,4 @@
-SHELL := $(bash)/bin/bash
+SHELL := bash
 markdowns := $(shell find www -name "text.x-web-markdown")
 articles := $(shell find www/article -name "text.x-web-markdown")
 stories := $(shell find www/story -name "text.x-web-markdown")
